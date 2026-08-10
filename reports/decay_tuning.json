@@ -1,0 +1,60 @@
+{
+  "grid": [
+    {
+      "decay_rate": 0.0,
+      "half_life_days": Infinity,
+      "n_matches": 2280,
+      "rps": 0.19557639307388416,
+      "log_loss": 0.9736359929678947
+    },
+    {
+      "decay_rate": 0.002,
+      "half_life_days": 346.6,
+      "n_matches": 2280,
+      "rps": 0.1939004341340861,
+      "log_loss": 0.9686209616462037
+    },
+    {
+      "decay_rate": 0.004,
+      "half_life_days": 173.3,
+      "n_matches": 2280,
+      "rps": 0.19491040628880194,
+      "log_loss": 0.9722806323193545
+    },
+    {
+      "decay_rate": 0.0065,
+      "half_life_days": 106.6,
+      "n_matches": 2280,
+      "rps": 0.19695557876554304,
+      "log_loss": 0.9799605993522611
+    },
+    {
+      "decay_rate": 0.009,
+      "half_life_days": 77.0,
+      "n_matches": 2280,
+      "rps": 0.19895922531915772,
+      "log_loss": 0.9870282708762544
+    },
+    {
+      "decay_rate": 0.012,
+      "half_life_days": 57.8,
+      "n_matches": 2280,
+      "rps": 0.20139794261354216,
+      "log_loss": 0.9966319607228852
+    },
+    {
+      "decay_rate": 0.018,
+      "half_life_days": 38.5,
+      "n_matches": 2280,
+      "rps": 0.20568932394657335,
+      "log_loss": 1.0126674137532163
+    }
+  ],
+  "best": {
+    "decay_rate": 0.002,
+    "half_life_days": 346.6,
+    "n_matches": 2280,
+    "rps": 0.1939004341340861,
+    "log_loss": 0.9686209616462037
+  }
+}

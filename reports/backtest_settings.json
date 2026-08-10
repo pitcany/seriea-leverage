@@ -1,0 +1,9 @@
+{
+  "decay_rate": 0.002,
+  "pool_weight": 5.9608609865491405e-06,
+  "temperature": 0.9904904536472477,
+  "backtest_start": "2013-08-01",
+  "test_start": "2019-08-01",
+  "n_validation": 2280,
+  "n_test": 2660
+}
