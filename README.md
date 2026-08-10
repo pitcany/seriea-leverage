@@ -5,6 +5,8 @@ accepted for publication, International Journal of Computer Applications, 2018;
 written 2016), extended from 10 seasons to 19 and re-posed around the question a
 football club would actually ask.
 
+**[Read the illustrated report →](https://claude.ai/code/artifact/a86d8eca-e4d9-4fd1-92e7-b020415a5b16)**
+
 The original study reported 53% three-way accuracy and compared that favourably
 against betting-market accuracy of 55.3%. This rebuild reaches the same
 conclusion the original was one step away from, and states it plainly:
