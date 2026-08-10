@@ -234,6 +234,17 @@ footer{
   font-family:var(--sans);font-size:.78rem;color:var(--faint);
   display:flex;flex-direction:column;gap:.6rem;max-width:var(--wide);
 }
+footer p{margin:0}
+.repo{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:.3rem .7rem;
+  padding-bottom:.5rem;
+}
+.repo a{
+  font-family:var(--mono);font-size:.85rem;font-weight:600;
+  color:var(--viola);text-decoration:none;
+  border-bottom:1px solid var(--rule);padding-bottom:1px;
+}
+.repo a:hover{border-bottom-color:var(--viola)}
 
 a{color:var(--viola);text-underline-offset:2px}
 a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--viola);outline-offset:2px}
@@ -647,11 +658,15 @@ Not one of them beat the constant.
   </section>
 
   <footer>
+    <p class="repo">
+      <a href="https://github.com/pitcany/seriea-leverage">github.com/pitcany/seriea-leverage</a>
+      <span>Code, tests, and every number on this page.</span>
+    </p>
     <p><b>Method.</b> football-data.co.uk, Serie A, 19 complete seasons (7,220 matches).
     Shin (1993) margin removal; Dixon&ndash;Coles (1997) bivariate Poisson with tuned exponential
     decay; RPS after Constantinou &amp; Fenton (2012); rolling-origin validation; bootstrap
     intervals throughout, paired for model comparisons. Python package with 99 tests at 94%
-    coverage; every figure on this page regenerates from the repository.</p>
+    coverage; every figure regenerates from the repository.</p>
     <p>Independent analysis by Yannik Pitcan. Not affiliated with, endorsed by, or produced for
     ACF Fiorentina or any club; Fiorentina appears here as the subject of a worked example.
     Bookmaker prices are used as a forecasting benchmark, not as betting advice.</p>
