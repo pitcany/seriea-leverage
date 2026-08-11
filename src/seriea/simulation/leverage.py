@@ -154,8 +154,14 @@ def _difference_standard_error(
 ) -> float:
     """Monte Carlo standard error on a difference of conditional probabilities.
 
-    The two conditioning events are disjoint, so the estimates are independent
-    and their variances add.
+    The two variances add. Note that this does *not* follow from the two
+    conditioning events being disjoint — disjointness alone says nothing about
+    the independence of statistics computed on the two subsamples. It holds for
+    a different reason: conditional on how many simulations fall into each
+    result category, the draws within each category are i.i.d., so the two
+    conditional means are independent binomial proportions. Unconditionally the
+    delta method gives a first-order covariance of exactly zero, so the sum of
+    variances is correct either way.
 
     Args:
         achieved: Boolean array flagging simulations meeting the objective.

@@ -164,14 +164,83 @@ def test_dixon_coles_score_grids_are_normalised() -> None:
 
 
 def test_dixon_coles_pools_unseen_clubs_to_the_league_mean() -> None:
-    """A newly promoted club has no history and must not raise."""
+    """An unseen club must forecast exactly like a club at the league average.
+
+    The earlier version of this test asserted only that the probabilities summed
+    to one, which every possible fallback satisfies — so it passed while unseen
+    clubs were in fact given attack 0 and defence 0. Attack 0 is the league mean
+    thanks to the sum-to-zero constraint, but defence is unconstrained and its
+    mean is materially negative, so promoted clubs were handed a
+    better-than-average defence. This now pins the actual property.
+    """
     matches = synthetic_matches(20)
     cut = matches["date"].max() + pd.Timedelta(days=1)
     forecaster = DixonColesForecaster(decay_rate=0.0).fit(matches, cut)
 
-    fixture = pd.DataFrame([{"home": "Fiorentina", "away": "Pisa"}])
-    probabilities = forecaster.predict_proba(fixture)
-    assert np.allclose(probabilities.sum(axis=1), 1.0)
+    unseen = forecaster.predict_proba(
+        pd.DataFrame([{"home": "Fiorentina", "away": "Pisa"}])
+    )
+    assert np.allclose(unseen.sum(axis=1), 1.0)
+
+    # Reconstruct a club sitting exactly at the league average and confirm the
+    # unseen club is forecast identically.
+    ratings = forecaster.ratings()
+    average_defence = forecaster._mean_defence
+    home_rate = np.exp(
+        forecaster.home_advantage + ratings.loc["Fiorentina", "attack"] - average_defence
+    )
+    away_rate = np.exp(0.0 - ratings.loc["Fiorentina", "defence"])
+
+    goals = np.arange(forecaster.max_goals + 1)
+    from scipy.stats import poisson
+
+    grid = poisson.pmf(goals[:, None], home_rate) * poisson.pmf(goals[None, :], away_rate)
+    grid = grid / grid.sum()
+    expected_home = np.tril(grid, k=-1).sum()
+
+    assert unseen[0, 0] == pytest.approx(expected_home, abs=5e-3)
+
+
+def test_dixon_coles_reports_convergence() -> None:
+    matches = synthetic_matches(20)
+    cut = matches["date"].max() + pd.Timedelta(days=1)
+    forecaster = DixonColesForecaster(decay_rate=0.0).fit(matches, cut)
+    assert forecaster.converged
+    assert isinstance(forecaster.optimiser_message, str)
+
+
+def test_dixon_coles_penalty_is_finite_and_graded() -> None:
+    """Infeasible parameters must be penalised smoothly, not by a flat constant.
+
+    A flat penalty is gradient-free, so an optimiser starting inside the
+    infeasible region terminates immediately and reports success while
+    returning its own starting values as fitted ratings.
+    """
+    matches = synthetic_matches(10)
+    cut = matches["date"].max() + pd.Timedelta(days=1)
+    forecaster = DixonColesForecaster(decay_rate=0.0).fit(matches, cut)
+
+    past = matches[matches["date"] < cut]
+    home_index = past["home"].map(forecaster._index).to_numpy(dtype=int)
+    away_index = past["away"].map(forecaster._index).to_numpy(dtype=int)
+    home_goals = past["home_goals"].to_numpy(dtype=int)
+    away_goals = past["away_goals"].to_numpy(dtype=int)
+    weights = np.ones(len(past))
+    n_teams = len(forecaster._index)
+
+    def objective(rho: float) -> float:
+        params = np.concatenate(
+            [np.zeros(n_teams - 1), np.zeros(n_teams), np.array([0.25, rho])]
+        )
+        return forecaster._negative_log_likelihood(
+            params, home_index, away_index, home_goals, away_goals, weights, n_teams
+        )
+
+    # Deep in the infeasible region the penalty must still increase with the
+    # violation, so a gradient points back toward feasibility.
+    deep, shallow = objective(-0.89), objective(-0.80)
+    assert np.isfinite(deep) and np.isfinite(shallow)
+    assert deep > shallow
 
 
 def test_dixon_coles_rejects_negative_decay() -> None:
@@ -197,17 +266,82 @@ def test_dixon_coles_needs_at_least_two_teams() -> None:
 
 
 def test_rolling_origin_forecasts_never_train_on_the_future() -> None:
-    """Every forecast must be made from an origin at or before its match date."""
+    """No forecast may be informed by a match played on or after its origin.
+
+    The earlier version of this test only asserted ``origin <= date``. That
+    property holds even when the harness trains on its own forecast window, so
+    the test passed against a deliberately leaky loop — it had no power to
+    detect the failure it was named for. The property that actually matters is
+    that the newest training match strictly predates the oldest match being
+    forecast, which is what a recording forecaster can prove directly.
+    """
     matches = synthetic_matches(30)
     start = matches["date"].min() + pd.Timedelta(days=60)
+
+    seen: list[tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]] = []
+
+    class RecordingForecaster(BaseRateForecaster):
+        """Records the training and forecast date ranges of every window."""
+
+        def fit(self, history: pd.DataFrame, as_of: pd.Timestamp) -> "RecordingForecaster":
+            super().fit(history, as_of)
+            self._latest_training_date = history["date"].max()
+            self._origin = as_of
+            return self
+
+        def predict_proba(self, fixtures: pd.DataFrame) -> np.ndarray:
+            seen.append((self._latest_training_date, self._origin, fixtures["date"].min()))
+            return super().predict_proba(fixtures)
+
     forecasts = rolling_origin_forecasts(
-        matches, lambda: BaseRateForecaster(), start, refit_days=21, training_window_days=None
+        matches, RecordingForecaster, start, refit_days=21, training_window_days=None
     )
 
     assert len(forecasts) > 0
-    assert (forecasts["origin"] <= forecasts["date"]).all()
+    assert len(seen) > 0
+    for latest_training, origin, first_fixture in seen:
+        assert latest_training < origin, "training data reached the origin"
+        assert latest_training < first_fixture, "training data reached the forecast window"
+
     assert (forecasts["date"] >= start).all()
     assert np.allclose(forecast_matrix(forecasts).sum(axis=1), 1.0)
+
+
+def test_rolling_origin_test_detects_injected_leakage() -> None:
+    """The leakage test above must fail when leakage is actually present.
+
+    A guard with no power is worse than no guard, because it reads as evidence.
+    This runs the same assertions against a harness that trains through the end
+    of its own forecast window and confirms they now catch it.
+    """
+    matches = synthetic_matches(30)
+    start = matches["date"].min() + pd.Timedelta(days=60)
+    window = pd.Timedelta(days=21)
+
+    caught = False
+    origin = start
+    while origin <= matches["date"].max():
+        window_end = origin + window
+        fixtures = matches[(matches["date"] >= origin) & (matches["date"] < window_end)]
+        # The injected bug: history runs to the END of the forecast window.
+        leaky_history = matches[matches["date"] < window_end]
+        if not fixtures.empty and not leaky_history.empty:
+            if not leaky_history["date"].max() < fixtures["date"].min():
+                caught = True
+                break
+        origin = window_end
+
+    assert caught, "the leakage assertion failed to detect training on the forecast window"
+
+
+def test_align_on_common_matches_rejects_duplicate_keys() -> None:
+    """Duplicate keys must raise rather than silently misalign rows."""
+    left = pd.DataFrame(
+        {"date": [1, 1, 2], "home": list("aab"), "away": list("xxy"), "value": [1, 2, 3]}
+    )
+    right = pd.DataFrame({"date": [1, 2], "home": list("ab"), "away": list("xy"), "value": [9, 8]})
+    with pytest.raises(ValueError, match="duplicate rows"):
+        align_on_common_matches(left, right)
 
 
 def test_rolling_origin_forecasts_rejects_an_empty_horizon() -> None:

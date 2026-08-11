@@ -81,3 +81,45 @@ def test_shin_handles_a_mixture_of_complete_and_incomplete_books() -> None:
 def test_devig_preserves_favourite_ordering() -> None:
     shin = devig_shin(SKEWED_BOOK)[0]
     assert shin[0] > shin[1] > shin[2]
+
+
+def exact_two_way_shin(odds: np.ndarray) -> np.ndarray:
+    """Closed-form Shin solution for a two-outcome book.
+
+    With two outcomes the root-finding collapses to algebra, giving an
+    independent reference the bisection can be checked against.
+    """
+    raw = 1.0 / np.asarray(odds, dtype=float)
+    book_sum = raw.sum()
+    first = (1.0 + raw[0] ** 2 / book_sum - raw[1] ** 2 / book_sum) / 2.0
+    return np.array([first, 1.0 - first])
+
+
+@pytest.mark.parametrize(
+    "odds",
+    [[1.45, 1.55], [1.42, 1.52], [1.40, 1.50], [1.25, 1.35], [1.10, 1.20]],
+)
+def test_shin_matches_the_closed_form_on_high_margin_books(odds: list[float]) -> None:
+    """High-margin books must still solve exactly.
+
+    These carry margins from 33% to 74%. An earlier upper bound on the
+    insider-trading parameter failed to bracket the root above roughly 33%, and
+    the final renormalisation hid it — the row still summed to one while being
+    materially wrong. Serie A 1X2 books never reach these margins, but two-way
+    and retail markets do.
+    """
+    book = np.array([odds])
+    assert devig_shin(book)[0] == pytest.approx(exact_two_way_shin(odds), abs=1e-12)
+
+
+def test_shin_raises_when_the_margin_is_unsolvable() -> None:
+    """A margin beyond the model's reach must fail loudly, not silently."""
+    with pytest.raises(ValueError, match="margin too large"):
+        devig_shin(np.array([[1.02, 1.02]]))
+
+
+def test_shin_treats_infinite_odds_as_zero_probability() -> None:
+    """Infinite odds are a certainty of not happening, not missing data."""
+    result = devig_shin(np.array([[np.inf, 2.0, 2.0]]))
+    assert result[0, 0] == pytest.approx(0.0)
+    assert result[0].sum() == pytest.approx(1.0)

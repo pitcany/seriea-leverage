@@ -129,7 +129,22 @@ def align_on_common_matches(
 
     Returns:
         The two frames restricted to shared matches and sorted identically.
+
+    Raises:
+        ValueError: If either frame has duplicate keys. Without this check a
+            duplicated key expands that side under ``.loc``, so the function
+            returns frames of *different lengths* with no error — and any
+            caller scoring them elementwise then either crashes on a shape
+            mismatch or, worse, silently compares misaligned rows.
     """
+    for name, frame in (("left", left), ("right", right)):
+        duplicates = int(frame.duplicated(subset=list(keys)).sum())
+        if duplicates:
+            raise ValueError(
+                f"{name} frame has {duplicates} duplicate rows for keys {list(keys)}; "
+                "alignment would silently misalign rows."
+            )
+
     left_keyed = left.set_index(list(keys)).sort_index()
     right_keyed = right.set_index(list(keys)).sort_index()
     shared = left_keyed.index.intersection(right_keyed.index)

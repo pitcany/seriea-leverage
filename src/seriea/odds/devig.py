@@ -28,7 +28,15 @@ _BISECTION_ITERATIONS: int = 60
 
 #: Upper bound for the insider-trading proportion. Strictly below one because
 #: the Shin expression divides by ``1 - z``.
-_MAX_Z: float = 0.35
+#:
+#: A valid book always has its root in (0, 1), and the root grows with the
+#: margin — roughly ``margin / (k - 1)`` for a ``k``-outcome book. An earlier
+#: bound of 0.35 silently mis-solved any book above roughly a 33% margin: the
+#: bisection converged to the clamp, and the final renormalisation restored a
+#: row sum of 1.0, so the wrong answer was undetectable downstream. Serie A 1X2
+#: books never come close (observed maximum root 0.061), but two-way and
+#: high-margin retail markets do.
+_MAX_Z: float = 0.95
 
 
 def implied_probabilities(odds: np.ndarray) -> np.ndarray:
@@ -105,9 +113,23 @@ def devig_shin(odds: np.ndarray) -> np.ndarray:
     Returns:
         Array of shape ``(n, k)`` whose rows sum to one, up to floating-point
         tolerance, wherever the input was complete.
+
+    Raises:
+        ValueError: If any book's margin is so large that its insider-trading
+            root lies beyond :data:`_MAX_Z`. Failing loudly matters here: the
+            final renormalisation would otherwise return a plausible-looking
+            row that sums to one but is quietly wrong.
+
+    Note:
+        A row is treated as incomplete, and returns NaN, only when a price is
+        NaN. Infinite odds imply a probability of exactly zero and are handled
+        normally. A book whose reciprocals sum to *less* than one — possible
+        when aggregating best prices across bookmakers — has no solution with
+        a non-negative insider share; such a row resolves at ``z = 0``, which
+        makes the result identical to :func:`devig_multiplicative`.
     """
     raw = implied_probabilities(odds)
-    complete = np.isfinite(raw).all(axis=1)
+    complete = ~np.isnan(raw).any(axis=1)
 
     result = np.full(raw.shape, np.nan, dtype=float)
     if not complete.any():
@@ -116,6 +138,18 @@ def devig_shin(odds: np.ndarray) -> np.ndarray:
     usable = raw[complete]
     low = np.zeros((usable.shape[0], 1))
     high = np.full((usable.shape[0], 1), _MAX_Z)
+
+    # The row sum decreases monotonically in z, so the root is bracketed only
+    # if the sum at the upper bound has already fallen to or below one.
+    at_upper_bound = _shin_probabilities(usable, high).sum(axis=1)
+    unbracketed = at_upper_bound > 1.0
+    if unbracketed.any():
+        worst = float(raw[complete][unbracketed].sum(axis=1).max() - 1.0)
+        raise ValueError(
+            f"{int(unbracketed.sum())} book(s) have a margin too large for Shin's "
+            f"model to solve within z <= {_MAX_Z} (largest margin {worst:.1%}). "
+            "Use devig_multiplicative for these, or verify the prices."
+        )
 
     # The row sum decreases monotonically in z, so plain bisection is safe and
     # vectorises cleanly across every book at once.

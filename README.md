@@ -29,11 +29,11 @@ Walk-forward, 2019-20 to 2025-26 (2,660 matches). Lower RPS is better.
 |---|---|---|---|---|
 | Market (Shin de-vigged) | **0.1905** | [0.1856, 0.1957] | 0.9620 | 54.8% |
 | Market + Dixon-Coles pool | 0.1905 | [0.1856, 0.1957] | 0.9620 | 54.9% |
-| Dixon-Coles (calibrated) | 0.1973 | [0.1922, 0.2025] | 0.9862 | 53.4% |
+| Dixon-Coles (calibrated) | 0.1972 | [0.1921, 0.2024] | 0.9858 | 53.4% |
 | Base rate | 0.2318 | [0.2292, 0.2344] | 1.0846 | 40.6% |
 | Uniform (the 2016 benchmark) | 0.2340 | [0.2312, 0.2367] | 1.0986 | 40.6% |
 
-Paired bootstrap, Dixon-Coles minus market: **+0.0068 RPS [+0.0047, +0.0090]** —
+Paired bootstrap, Dixon-Coles minus market: **+0.0067 RPS [+0.0046, +0.0088]** —
 the model is significantly *worse* than the market, not comparable to it.
 
 Three points worth drawing out:
@@ -46,9 +46,36 @@ Three points worth drawing out:
    principled likelihood and tuned time decay bought no accuracy. That is
    informative: three-way match accuracy is close to its ceiling.
 3. **Calibration and discrimination are different things.** The model is
-   *better calibrated* than the market on the home-win margin (slope 0.993 vs
+   *better calibrated* than the market on the home-win margin (slope 0.995 vs
    1.103) while being decisively less sharp. Fitted temperature was 0.99, i.e.
    no correction needed. The market's advantage is information, not honesty.
+
+## Is it just that goals are noisy?
+
+The obvious objection to the headline: goals are the noisiest thing a football
+match produces, so maybe the model failed because of its *target* rather than
+its method. Expected goals is the standard fix — and no free, licence-permitting
+source covers Serie A back to 2007 (StatsBomb's open data has one modern Serie A
+season; FBref blocks automated access; Understat's `robots.txt` is
+`Disallow: /`). So this uses the pre-xG proxy the corpus already contains: the
+same Dixon-Coles machinery fitted to **shots on target**, converted to goal rates
+by one league-wide finishing factor.
+
+| Pool (weights fitted on validation) | Market | Goals | Shots |
+|---|---|---|---|
+| Market + shots | 1.00 | — | **0.00** |
+| Goals + shots | — | 0.65 | **0.35** |
+| Market + goals + shots | 1.00 | **0.00** | **0.00** |
+
+The middle row is the finding. **Shots on target carry information the goals
+model lacks** — 35% weight against goals alone — so the original result was not
+an artefact of a noisy target. Against the market that same signal earns exactly
+zero, and in the three-way pool both models collapse to zero together.
+
+Two model families on different targets, each holding information the other
+lacks, and the closing price has already absorbed both. That is a stronger claim
+than the goals-only result, and it is the version real xG would most likely have
+confirmed rather than overturned.
 
 ## Match leverage: the Fiorentina case
 
@@ -60,8 +87,8 @@ Remaining fixtures ranked by leverage on survival:
 
 | Fixture | Venue | P(survive \| win) | P(survive \| lose) | Leverage |
 |---|---|---|---|---|
-| Lecce | A | 0.987 | 0.914 | **0.074** |
-| Cremonese | A | 0.986 | 0.922 | 0.064 |
+| Lecce | A | 0.987 | 0.914 | **0.073** |
+| Cremonese | A | 0.986 | 0.922 | 0.063 |
 | Verona | A | 0.982 | 0.927 | 0.055 |
 | … | | | | |
 | Juventus | A | 0.988 | 0.951 | 0.037 |
@@ -69,7 +96,7 @@ Remaining fixtures ranked by leverage on survival:
 | Inter | H | 0.988 | 0.955 | **0.033** |
 
 The glamour fixture is the *least* consequential one on the list. Away at Lecce
-carries **2.2× the leverage** of hosting Inter, and the gap is roughly nine Monte
+carries **2.3× the leverage** of hosting Inter, and the gap is roughly eight Monte
 Carlo standard errors wide, so the ordering is not noise. Six-pointers against
 fellow strugglers dominate; matches against the top six barely move survival
 either way, because the model expects defeat in both branches.
@@ -111,7 +138,7 @@ is the thing a 1X2 forecast cannot tell you on its own.
 | Fixed `e^-i` weights, ÷ n | Tuned decay, normalised by weight sum |
 | No confidence intervals | Bootstrap intervals throughout |
 | Point predictions | Calibration diagnostics + recalibration |
-| MATLAB Classification Learner | Reproducible package, 99 tests |
+| MATLAB Classification Learner | Reproducible package, 126 tests, independently audited |
 | Predicts outcomes | Simulates seasons, ranks fixtures by leverage |
 
 Two arithmetic notes on the original, recovered from its own confusion matrices
@@ -134,9 +161,10 @@ python scripts/tune_decay.py          # ~10 min: decay selection on validation
 python scripts/run_backtest.py        # ~5 min: walk-forward vs the market
 python scripts/fiorentina_leverage.py # season simulation and leverage table
 python scripts/make_figures.py
+python scripts/run_shots_experiment.py # shot-based signal vs goals vs market
 python scripts/build_artifact.py      # self-contained HTML report
 
-pytest                                 # 99 tests, 94% coverage
+pytest                                 # 126 tests
 ```
 
 ## Layout
