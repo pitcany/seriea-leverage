@@ -1,0 +1,477 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.05in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[hidelinks]{hyperref}
+\usepackage[round]{natbib}
+
+\title{\bfseries Calibrated Forecasting and Match Leverage in the Serie A\\[2pt]
+\large A correction and extension of \emph{Soccer Match Prediction in the Serie A}}
+\author{Yannik Pitcan\\
+\small \texttt{pitcany@gmail.com}}
+\date{August 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+A 2016 study of mine, accepted for publication in the \emph{International Journal
+of Computer Applications} in 2018, reported 53.0\% three-way accuracy on Serie A
+match outcomes and compared that favourably against betting-market accuracy of
+55.3\%. This paper corrects that study and extends it from ten seasons to
+nineteen (7{,}220 matches, 2007--08 to 2025--26). Three corrections matter. The
+benchmark should have been the outcome base rate, 40.6\%, not uniform guessing
+at 33\%. Bookmaker odds were used as model \emph{features} and then treated as
+an independent standard of comparison, which inverts the logic of the test. And
+with 218 scored matches, the reported spread across five classifiers lay inside
+two standard errors, so no ranking among them was supported.
+
+Rebuilt on a proper likelihood with tuned time decay and rolling-origin
+validation, the model reaches 53.4\% accuracy---statistically indistinguishable
+from the 2016 figure---and loses to a margin-free closing price by $0.0067$
+Ranked Probability Score ($95\%$ CI $[0.0046, 0.0088]$). In a logarithmic
+opinion pool with the market, the optimal weight on the structural model is
+$0.000$, on validation and on test alike. Refitting the same machinery to shots
+on target, a pre-expected-goals proxy for chance creation, earns weight $0.35$
+against the goals model but again $0.000$ against the market: two signals, each
+carrying information the other lacks, both already priced.
+
+The constructive consequence is that the deliverable is not a better outcome
+forecast but what is built on a calibrated one. We define \emph{match
+leverage}---the change in a club's probability of achieving its season objective
+between winning and losing a given fixture---and compute it for ACF Fiorentina
+from 1 March 2026. The ordering inverts intuition: an away fixture against a
+relegation rival carried $2.3\times$ the leverage of hosting the eventual
+champions.
+\end{abstract}
+
+\section{Introduction}
+
+Forecasting association-football outcomes is a mature problem with an
+uncomfortable property: the most accessible benchmark, the betting market, is
+also a very strong one. Published work in the applied-computing literature
+frequently reports accuracy figures in the low fifties and presents them as
+competitive without establishing what the relevant floor and ceiling are. My own
+2016 study \citep{pitcan2018} is an instance of this, and the present paper
+begins by correcting it.
+
+Section~\ref{sec:errata} documents the specific errors. Sections~\ref{sec:data}
+and~\ref{sec:methods} describe the corpus and the rebuilt methodology.
+Section~\ref{sec:results} reports the central negative result and the
+shots-on-target replication. Section~\ref{sec:leverage} defines match leverage
+and applies it. Section~\ref{sec:limits} states what the work cannot do.
+
+Two framing errors drove the original conclusion, and both are worth stating
+before the arithmetic. First, the benchmark: the study compared its accuracy
+against uniform guessing at $33\%$. Home advantage alone places the majority
+class well above that---over this corpus the home side wins $44.1\%$ of
+matches---so roughly seven percentage points of the apparent margin were never a
+margin at all. Second, and more seriously, bookmaker odds were supplied to the
+classifiers as input features, after which the resulting accuracy was compared
+against the accuracy of the bookmaker. A model given the market's own forecast
+should match it as a floor; scoring below it indicates the pipeline is
+discarding information rather than adding any. The original noted the symptom
+(``the betting odds did not impact predictions very much'') and attributed it to
+the odds being uninformative.
+
+\section{Errata to the 2016 study}
+\label{sec:errata}
+
+The following are recomputed directly from the confusion matrices printed in
+\citet{pitcan2018}. Both matrices total 218 matches, against a stated test set
+of 320; the difference is early-season fixtures dropped for insufficient match
+history, a discrepancy the text does not reconcile.
+
+\paragraph{A mislabelled table.} Tables 4.1 and 4.2 of the original are both
+captioned ``Linear SVM''. Table 4.1 has diagonal $80+29+2 = 111$, i.e.\
+$50.9\%$, matching the reported Linear SVM figure. Table 4.2 has diagonal
+$77+34+3 = 114$, i.e.\ $52.3\%$, which is the reported AdaBoost figure. Table
+4.2 is AdaBoost.
+
+\paragraph{Binary classifiers below the trivial baseline.} Away wins constitute
+$60/218 = 27.5\%$ of the test set, so the constant rule ``never predict an away
+win'' scores $72.5\%$. The reported away-win accuracies are $72.9$ (Gaussian
+SVM), $69.7$ (Linear SVM), $68.4$ (AdaBoost) and $45.9$ (logistic regression).
+None materially exceeds the constant rule; three fall below it. On the home
+side, home wins are $92/218$, so ``never predict a home win'' scores
+$126/218 = 57.80\%$. The reported Linear SVM home accuracy is $57.8$. To three
+significant figures this is the constant rule, which implies the classifier
+predicted no home win at all.
+
+\paragraph{Model ranking within noise.} With $n = 218$, the standard error of an
+accuracy near one half is $\sqrt{0.25/218} \approx 0.034$. The reported
+multi-class accuracies span $47.2\%$ to $53.0\%$---under two standard errors end
+to end---and the $n=5$ versus $n=7$ comparison moves the three classifiers in
+inconsistent directions. The conclusion that a particular classifier performed
+best is not supported.
+
+\paragraph{An error in the form weighting.} The original defines a
+time-weighted form feature as $\tau'(\{x_1,\dots,x_n\}) = \frac{1}{n}\sum_i x_i
+e^{-i}$. A weighted average must be normalised by $\sum_i w_i$, not by $n$. With
+$n=5$, $\sum_{i=1}^{5} e^{-i} = 0.578$, so dividing by $5$ shrinks the weighted
+feature to roughly $1/8.7$ of the scale of its unweighted counterpart---material
+for the kernel and regularised methods used, which are not scale-invariant.
+Separately, the decay is severe: $63.6\%$ of the weight falls on the most recent
+match and the Kish effective sample size is $2.1$ matches, so a nominal
+five-match window carries about two matches of information. The decay rate was
+fixed by assertion rather than fitted.
+
+\section{Data}
+\label{sec:data}
+
+The corpus is nineteen complete Serie A seasons, 2007--08 through 2025--26,
+comprising $7{,}220$ matches, obtained from \texttt{football-data.co.uk}. Each
+record carries date, clubs, full-time score and outcome, shots, shots on target
+and corners for both sides, and closing-line prices. Bet365 opening prices are
+present for all seasons; Pinnacle opening and closing prices are present from
+2012--13, and the closing line is preferred wherever available.
+
+One structural feature of the corpus deserves note, because it motivates a
+modelling choice below: promotion and relegation mean only eight clubs appear in
+all nineteen seasons, while many appear once or twice. Any rating scheme must
+therefore handle clubs with little or no top-flight history.
+
+A second feature is substantive rather than technical. Home advantage in Serie A
+has eroded materially over the period: the home win rate falls from $47.5\%$
+(2007--13) to $40.2\%$ (2023--26), and the ratio of home to away goals from
+$1.38$ to $1.14$. A model fitted on the full corpus without time weighting would
+misstate the current strength of home advantage.
+
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Market probabilities}
+
+Decimal odds are a reciprocal transform of probability, and the reciprocals of a
+quoted book sum to more than one by the bookmaker's margin. Rather than supply
+raw odds as features, we convert them to probabilities and remove the margin by
+Shin's insider-trading model \citep{shin1993}, which apportions more of the
+margin to longshots than proportional normalisation does and is the
+best-performing practical method in the comparison of \citet{strumbelj2014}. For
+a $k$-outcome book with raw inverse odds $\pi_i$ and book sum $\Pi = \sum_j
+\pi_j$, the implied probabilities solve
+\begin{equation}
+p_i(z) = \frac{\sqrt{z^2 + 4(1-z)\,\pi_i^2/\Pi} - z}{2(1-z)},
+\qquad \text{with } z \text{ chosen so } \sum_i p_i(z) = 1 .
+\end{equation}
+The row sum is strictly decreasing in $z$, so the root is located by bisection.
+
+\subsection{Structural model}
+
+Scorelines are modelled with the bivariate Poisson construction of
+\citet{dixoncoles1997}. Each club $j$ carries an attack rating $\alpha_j$ and a
+defence rating $\delta_j$; for a fixture between home club $h$ and away club
+$a$,
+\begin{equation}
+\log \lambda = \gamma + \alpha_h - \delta_a, \qquad
+\log \mu = \alpha_a - \delta_h ,
+\end{equation}
+with $\gamma$ the home advantage. The joint mass on low scores is corrected by
+the factor $\tau(x,y)$ of \citet{dixoncoles1997}, which adjusts the four cells
+$(0,0)$, $(0,1)$, $(1,0)$ and $(1,1)$ through a dependence parameter $\rho$; the
+independent-Poisson product demonstrably misfits there. Matches are weighted
+exponentially by age,
+\begin{equation}
+w(t) = \exp\!\left(-\xi \, \Delta t\right),
+\end{equation}
+with $\Delta t$ in days before the forecast origin. Attack ratings are
+constrained to sum to zero, which removes the one-dimensional translation
+invariance of the pair $(\alpha, \delta)$ and renders the parameters
+identifiable. Clubs absent from the training window---newly promoted
+sides---take the exposure-weighted league mean rather than an arbitrary
+constant.
+
+The decay rate $\xi$ is selected on the validation period rather than assumed.
+The grid search returns a clean interior optimum at $\xi = 0.002$ per day, a
+half-life of $347$ days, appreciably slower than the $0.0065$ of the original
+Dixon--Coles paper.
+
+\subsection{A process-based variant}
+
+Goals are a sparse realisation of chance creation, and a rating fitted to them
+inherits finishing noise. Expected goals is the standard remedy; no freely
+licensed source covers Serie A back to 2007. We therefore fit the identical
+machinery to \emph{shots on target}, the pre-expected-goals proxy the corpus
+already contains, and convert the predicted shot rates to goal rates with a
+single league-wide finishing factor estimated on the same window. The factor is
+deliberately not club-specific, since club finishing variation is the noise the
+substitution is intended to remove.
+
+\subsection{Evaluation}
+
+Because the outcome is ordered---home win, draw, away win---the primary metric
+is the Ranked Probability Score \citep{epstein1969}, which is the standard
+choice in football forecasting following \citet{constantinou2012}:
+\begin{equation}
+\mathrm{RPS} = \frac{1}{r-1} \sum_{i=1}^{r-1}
+\left( \sum_{j=1}^{i} (p_j - a_j) \right)^{\!2} ,
+\end{equation}
+with $r=3$. RPS penalises a confident home call more heavily when the away side
+wins than when the match is drawn; accuracy and the Brier score cannot make that
+distinction. Log loss and Brier are reported alongside, and accuracy is retained
+solely for comparability with the 2016 study.
+
+All models are scored walk-forward: fitted on matches strictly preceding an
+origin, used to forecast the following fortnight, then refitted. The original
+used five-fold cross-validation on time-ordered data, which permits a fold
+containing March to inform a prediction about January. Hyperparameters, the
+pooling weight and the calibration temperature are fixed on
+2013--14 to 2018--19 ($n = 2{,}280$); the test period, 2019--20 to 2025--26
+($n = 2{,}660$), is scored once. Every reported mean carries a bootstrap
+interval, and model comparisons use a paired bootstrap over matches, exploiting
+the fact that competing models score the same fixtures.
+
+\subsection{The incremental-information test}
+
+The question the 2016 study should have posed is not whether the model is
+accurate but whether it carries information the market has not already priced. A
+logarithmic opinion pool answers this directly. For market forecast $p^{M}$ and
+model forecast $p^{S}$,
+\begin{equation}
+p \;\propto\; \left(p^{M}\right)^{1-w} \left(p^{S}\right)^{w},
+\end{equation}
+with $w$ fitted out of sample. A weight indistinguishable from zero is evidence
+that the model adds nothing; a weight materially above zero is evidence of
+genuine incremental information. The logarithmic pool is preferred to a linear
+one as it is externally Bayesian and operates naturally on log-odds.
+
+\section{Results}
+\label{sec:results}
+
+\begin{table}[t]
+\centering
+\caption{Test period, 2019--20 to 2025--26 ($n = 2{,}660$). Lower RPS is better.}
+\label{tab:main}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Model & RPS & 95\% CI & Log loss & Brier & Accuracy \\
+\midrule
+Market (Shin de-vigged)      & \textbf{0.1905} & [0.1856, 0.1957] & 0.9620 & 0.5717 & 54.8\% \\
+Market $+$ model pool        & 0.1905 & [0.1856, 0.1957] & 0.9620 & 0.5717 & 54.9\% \\
+Dixon--Coles (calibrated)    & 0.1972 & [0.1921, 0.2024] & 0.9858 & 0.5862 & 53.4\% \\
+Shots on target              & 0.2001 & [0.1959, 0.2042] & 0.9959 & --- & 52.9\% \\
+Base rate                    & 0.2318 & [0.2292, 0.2344] & 1.0846 & 0.6574 & 40.6\% \\
+Uniform (2016 benchmark)     & 0.2340 & [0.2312, 0.2367] & 1.0986 & 0.6667 & 40.6\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:main} reports the central comparison. The market attains RPS
+$0.1905$; the structural model $0.1972$. The paired bootstrap places the
+difference at $+0.0067$ RPS with $95\%$ interval $[0.0046, 0.0088]$---small in
+magnitude but decisively non-zero. The model is worse than the market, not
+comparable to it.
+
+Two secondary observations follow. First, the rebuilt model attains $53.4\%$
+accuracy against the 2016 study's $53.0\%$. Nine additional seasons, a
+principled likelihood, tuned decay and leak-free validation bought $0.4$
+accuracy points, well inside noise. This is informative rather than
+disappointing: three-way match accuracy appears to be near its ceiling, and
+effort spent improving it is spent on a quantity that has stopped moving.
+Second, the correct floor is the base rate at $40.6\%$, not uniform guessing.
+
+\paragraph{The pooling weight.} Fitted on validation, the optimal weight on the
+structural model in a logarithmic pool with the market is $0.000$. This is not a
+small weight but a boundary solution: log loss increases monotonically as any
+weight is transferred onto the model, on the validation period and---were one to
+cheat and fit it there---on the test period also.
+
+\begin{table}[t]
+\centering
+\caption{Pool weights fitted on the validation period.}
+\label{tab:pool}
+\small
+\begin{tabular}{lccc}
+\toprule
+Pool & Market & Goals model & Shots model \\
+\midrule
+Market $+$ shots            & 1.00 & ---  & 0.00 \\
+Goals $+$ shots             & ---  & 0.65 & \textbf{0.35} \\
+Market $+$ goals $+$ shots  & 1.00 & 0.00 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Is the target simply too noisy?} The natural objection is that the
+model failed because goals are noisy, not because the method is inadequate.
+Table~\ref{tab:pool} addresses this. Against the goals model alone, the
+shots-on-target variant earns weight $0.35$: it demonstrably carries information
+the goals model lacks, so the negative result is not an artefact of target
+choice. Against the market, the same signal earns $0.00$, and in the three-way
+pool both structural models collapse to zero simultaneously. Two model families
+built on different targets, each holding information the other lacks, and the
+closing price has already absorbed both.
+
+\paragraph{Calibration and discrimination are distinct.} On the home-win margin
+the structural model is \emph{better calibrated} than the market---calibration
+slope $0.995$ against the market's $1.103$, with comparable expected calibration
+error ($0.021$ for both)---while being clearly less sharp. The fitted
+recalibration temperature is $0.99$, i.e.\ essentially no correction is
+warranted. The market's advantage is therefore information, not honesty. These
+are different deficiencies and they call for different remedies; a study
+reporting only accuracy cannot distinguish them.
+
+\section{Match leverage}
+\label{sec:leverage}
+
+If a structural model cannot beat a closing price on match outcomes, the product
+worth building is not a match-outcome forecast. A club can read the market for
+free. What a club cannot read off the market is the quantity that governs its
+decisions: how much a particular fixture matters.
+
+Let $\Omega$ denote a season objective---survival, European qualification, the
+title---expressed as a band of final league positions. For a remaining fixture
+$m$, define
+\begin{equation}
+L_m \;=\; \Pr\!\left(\Omega \mid \text{win } m\right) \;-\;
+          \Pr\!\left(\Omega \mid \text{lose } m\right).
+\end{equation}
+We estimate $L_m$ by simulating the remainder of the season $20{,}000$ times,
+sampling complete scorelines from each fixture's joint distribution so that goal
+difference resolves naturally, and conditioning on the simulated result of $m$.
+Because fixtures are sampled independently, conditioning after the fact is
+equivalent to intervening on $m$ and resampling the remainder; this equivalence
+was verified by exhaustive enumeration on a reduced league and by direct
+comparison against forced-outcome simulation at $10^{6}$ replications.
+
+\begin{table}[t]
+\centering
+\caption{ACF Fiorentina, simulated from 1 March 2026. The club stood 16th on 24
+points with twelve fixtures remaining. Objective: survival, i.e.\ a final
+position of 17th or better.}
+\label{tab:leverage}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Fixture & Venue & $\Pr(\Omega \mid W)$ & $\Pr(\Omega \mid D)$ & $\Pr(\Omega \mid L)$ & Leverage \\
+\midrule
+Lecce      & A & 0.987 & 0.959 & 0.914 & \textbf{0.073} \\
+Cremonese  & A & 0.986 & 0.957 & 0.922 & 0.063 \\
+Verona     & A & 0.982 & 0.952 & 0.927 & 0.055 \\
+Genoa      & H & 0.984 & 0.962 & 0.932 & 0.053 \\
+Udinese    & A & 0.985 & 0.961 & 0.933 & 0.052 \\
+Sassuolo   & H & 0.982 & 0.956 & 0.932 & 0.050 \\
+Lazio      & H & 0.988 & 0.960 & 0.942 & 0.046 \\
+Parma      & H & 0.981 & 0.955 & 0.936 & 0.045 \\
+Atalanta   & H & 0.990 & 0.966 & 0.949 & 0.041 \\
+Juventus   & A & 0.988 & 0.971 & 0.951 & 0.037 \\
+Roma       & A & 0.988 & 0.968 & 0.952 & 0.036 \\
+Inter      & H & 0.988 & 0.971 & 0.955 & \textbf{0.033} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:leverage} reports the result. The ordering inverts intuition. The
+fixtures that move survival most are those against direct relegation rivals;
+those against the leading clubs move it least, because the model already expects
+defeat in both branches and has priced it. Losing at home to Inter---the
+eventual champions, and by any measure the season's marquee fixture---costs
+Fiorentina $3.3$ percentage points of survival probability. Losing away at Lecce
+costs $7.3$. The away fixture carries $2.3\times$ the leverage of the home one,
+and the gap is approximately eight Monte Carlo standard errors wide, so the
+ordering is not simulation noise.
+
+This is a rotation and load-management argument expressed in probability. The
+Inter fixture is where a fatigued first-choice player is cheapest to rest; Lecce
+away is where he is most expensive. No match-outcome forecast conveys that on
+its own.
+
+As a coherence check rather than a claim of predictive success, the simulation
+projected $41.4$ expected final points against an actual $42$, and assigned a
+survival probability of $96.4\%$; Fiorentina finished 15th. A single realisation
+from a distribution is weak evidence, but it establishes that the season
+aggregation is not obviously broken, which is the minimum bar before a leverage
+ranking is acted upon.
+
+\section{Limitations}
+\label{sec:limits}
+
+\textbf{No player-level information.} The model has no access to injuries,
+suspensions, rest days, or transfers. This is the largest gap between this work
+and what a club holds internally, and the most likely location of a genuine edge
+over a market price.
+
+\textbf{No expected goals.} Shots on target weight a tap-in and a speculative
+long-range effort equally. Licensed event data would sharpen the process-based
+variant, though the results in Table~\ref{tab:pool} suggest it would refine the
+conclusion rather than reverse it.
+
+\textbf{The benchmark is a closing price.} It incorporates late team news the
+model never observes. Some portion of the $0.0067$ RPS gap is information
+asymmetry rather than modelling deficiency.
+
+\textbf{Leverage is single-objective.} It conditions on one position band at a
+time. A club trading survival against a cup run requires a utility function, not
+a probability difference.
+
+\textbf{Tiebreakers are simplified} to points, then goal difference, then goals
+scored; Serie A resolves equal points on head-to-head record first. Exact ties
+affecting the reported band occur in under $0.01\%$ of simulations.
+
+\section{Reproducibility}
+
+All results derive from public data and a versioned Python package. The
+implementation carries 126 tests. Four areas---the margin-removal solver, the
+likelihood and its identifiability, the walk-forward harness, and the leverage
+estimator---were additionally subjected to independent adversarial audit, which
+confirmed the absence of look-ahead bias by positive control and identified four
+defects, all corrected before the results reported here were generated. Two of
+the corrected defects were tests that asserted nothing: one passed against a
+deliberately leaky harness, the other checked only that probabilities summed to
+one. Code and data pipeline: \url{https://github.com/pitcany/seriea-leverage}.
+
+\begin{thebibliography}{9}
+
+\bibitem[Constantinou and Fenton(2012)]{constantinou2012}
+Constantinou, A. and Fenton, N. (2012).
+Solving the problem of inadequate scoring rules for assessing probabilistic
+football forecast models.
+\emph{Journal of Quantitative Analysis in Sports}, 8(1).
+
+\bibitem[Dixon and Coles(1997)]{dixoncoles1997}
+Dixon, M. and Coles, S. (1997).
+Modelling association football scores and inefficiencies in the football betting
+market.
+\emph{Journal of the Royal Statistical Society: Series C}, 46(2), 265--280.
+
+\bibitem[Epstein(1969)]{epstein1969}
+Epstein, E. S. (1969).
+A scoring system for probability forecasts of ranked categories.
+\emph{Journal of Applied Meteorology}, 8(6), 985--987.
+
+\bibitem[Gneiting and Raftery(2007)]{gneiting2007}
+Gneiting, T. and Raftery, A. E. (2007).
+Strictly proper scoring rules, prediction, and estimation.
+\emph{Journal of the American Statistical Association}, 102(477), 359--378.
+
+\bibitem[Pitcan(2018)]{pitcan2018}
+Pitcan, Y. (2018).
+Soccer match prediction in the Serie A.
+Accepted for publication, \emph{International Journal of Computer Applications}.
+
+\bibitem[Rue and Salvesen(2000)]{rue2000}
+Rue, H. and Salvesen, {\O}. (2000).
+Prediction and retrospective analysis of soccer matches in a league.
+\emph{Journal of the Royal Statistical Society: Series D}, 49(3), 399--418.
+
+\bibitem[Shin(1993)]{shin1993}
+Shin, H. S. (1993).
+Measuring the incidence of insider trading in a market for state-contingent
+claims.
+\emph{The Economic Journal}, 103(420), 1141--1153.
+
+\bibitem[{\v S}trumbelj(2014)]{strumbelj2014}
+{\v S}trumbelj, E. (2014).
+On determining probability forecasts from betting odds.
+\emph{International Journal of Forecasting}, 30(4), 934--943.
+
+\end{thebibliography}
+
+\end{document}

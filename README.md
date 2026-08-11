@@ -5,7 +5,7 @@ accepted for publication, International Journal of Computer Applications, 2018;
 written 2016), extended from 10 seasons to 19 and re-posed around the question a
 football club would actually ask.
 
-**[Read the illustrated report →](https://claude.ai/code/artifact/a86d8eca-e4d9-4fd1-92e7-b020415a5b16)**
+**[Read the illustrated report →](https://claude.ai/code/artifact/a86d8eca-e4d9-4fd1-92e7-b020415a5b16)**  ·  **[Paper (PDF) →](paper/seriea-leverage.pdf)**
 
 The original study reported 53% three-way accuracy and compared that favourably
 against betting-market accuracy of 55.3%. This rebuild reaches the same
@@ -163,6 +163,7 @@ python scripts/fiorentina_leverage.py # season simulation and leverage table
 python scripts/make_figures.py
 python scripts/run_shots_experiment.py # shot-based signal vs goals vs market
 python scripts/build_artifact.py      # self-contained HTML report
+cd paper && latexmk -pdf seriea-leverage.tex   # the paper
 
 pytest                                 # 126 tests
 ```
@@ -177,6 +178,7 @@ src/seriea/
   models/                base-rate and market baselines, Dixon-Coles, market-model pool
   evaluation/            RPS/log loss/Brier, calibration, bootstrap, rolling-origin backtest
   simulation/            Monte Carlo seasons, match leverage
+paper/                   LaTeX source and PDF of the written paper
 scripts/                 the runnable experiments and the report build
 assets/fonts/            EB Garamond subsets (OFL-1.1) inlined into the report
 reports/                 generated tables, figures, settings

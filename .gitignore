@@ -17,3 +17,13 @@ reports/forecasts.parquet
 
 # Built by scripts/build_artifact.py from reports/artifact.html + assets/fonts
 reports/artifact.built.html
+
+# LaTeX build artefacts (the PDF itself is tracked)
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
