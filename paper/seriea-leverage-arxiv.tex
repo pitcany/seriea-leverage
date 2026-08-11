@@ -63,7 +63,7 @@ leverage}, the change in a club's probability of achieving a season objective
 between winning and losing a given fixture, give conditions under which it can
 be estimated by post-hoc conditioning on a single simulation, and compute it
 for ACF Fiorentina. The ordering inverts intuition: an away fixture against a
-relegation rival carried $2.3\times$ the leverage of hosting the eventual
+relegation rival carried $2.25\times$ the leverage of hosting the eventual
 champions.
 
 The paper also documents and corrects specific errors in an earlier study of
@@ -709,7 +709,7 @@ expected in both branches and therefore already priced into the season
 distribution. Losing at home to Inter---the eventual champions, and the
 season's marquee fixture---costs $3.3$ percentage points of survival
 probability; losing away at Lecce costs $7.3$. The away fixture carries
-$2.3\times$ the leverage of the home one, a gap of approximately eight Monte
+$2.25\times$ the leverage of the home one, a gap of approximately eight Monte
 Carlo standard errors, so the ordering is not simulation noise.
 
 This is a rotation and load-management statement expressed in probability: the
@@ -799,6 +799,21 @@ asserted nothing: one passed against a deliberately leaky harness, the other
 verified only that probabilities summed to one. We mention this because the
 negative result reported here is of a kind that a coding error can easily
 manufacture, and readers are entitled to know what was done to exclude that.
+
+\textbf{Platform sensitivity.} The figures reported here reproduce exactly on
+the machine that generated them: two independent runs of the full pipeline
+agree bit for bit. They do not reproduce exactly across machines. No random
+seed enters the fit---the likelihood is optimised by L-BFGS-B from a
+deterministic starting point with finite-difference gradients---so the only
+source of variation is floating-point reduction order, which differs between
+linear-algebra builds. Rerunning on different hardware moved the converged
+parameters in the fifth decimal, which propagated to the calibration
+temperature ($0.99011$ against $0.99009$) and, on the test period, flipped one
+match of $2{,}660$ from incorrect to correct. Every figure in
+Tables~\ref{tab:main}, \ref{tab:seasons}, \ref{tab:pool} and
+\ref{tab:leverage} survives at the precision printed; two expected-calibration
+entries in Table~\ref{tab:calib} move by $0.0003$. A reader reproducing the
+pipeline should expect agreement to three decimal places rather than exactly.
 
 Code, data pipeline and figures: \url{https://github.com/pitcany/seriea-leverage}.
 

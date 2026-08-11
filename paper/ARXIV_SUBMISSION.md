@@ -69,7 +69,7 @@ in what is built on a calibrated one. We define match leverage, the change in a 
 probability of achieving a season objective between winning and losing a given
 fixture, give conditions under which it can be estimated by post-hoc conditioning on a
 single simulation, and compute it for ACF Fiorentina. The ordering inverts intuition:
-an away fixture against a relegation rival carried 2.3x the leverage of hosting the
+an away fixture against a relegation rival carried 2.25x the leverage of hosting the
 eventual champions.
 
 The paper also documents and corrects specific errors in an earlier study of our own

@@ -47,7 +47,7 @@ forecast but what is built on a calibrated one. We define \emph{match
 leverage}---the change in a club's probability of achieving its season objective
 between winning and losing a given fixture---and compute it for ACF Fiorentina
 from 1 March 2026. The ordering inverts intuition: an away fixture against a
-relegation rival carried $2.3\times$ the leverage of hosting the eventual
+relegation rival carried $2.25\times$ the leverage of hosting the eventual
 champions.
 \end{abstract}
 
@@ -382,7 +382,7 @@ those against the leading clubs move it least, because the model already expects
 defeat in both branches and has priced it. Losing at home to Inter---the
 eventual champions, and by any measure the season's marquee fixture---costs
 Fiorentina $3.3$ percentage points of survival probability. Losing away at Lecce
-costs $7.3$. The away fixture carries $2.3\times$ the leverage of the home one,
+costs $7.3$. The away fixture carries $2.25\times$ the leverage of the home one,
 and the gap is approximately eight Monte Carlo standard errors wide, so the
 ordering is not simulation noise.
 
@@ -433,6 +433,13 @@ confirmed the absence of look-ahead bias by positive control and identified four
 defects, all corrected before the results reported here were generated. Two of
 the corrected defects were tests that asserted nothing: one passed against a
 deliberately leaky harness, the other checked only that probabilities summed to
+Results reproduce exactly on the machine that generated them---two independent
+runs agree bit for bit---but not across machines. No random seed enters the
+fit, so the only source of variation is floating-point reduction order; on
+different hardware the converged parameters move in the fifth decimal, which
+shifts two expected-calibration entries by $0.0003$ and flips one match of
+$2{,}660$. Expect agreement to three decimal places rather than exactly.
+
 one. Code and data pipeline: \url{https://github.com/pitcany/seriea-leverage}.
 
 \begin{thebibliography}{9}
