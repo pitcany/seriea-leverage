@@ -31,7 +31,7 @@ required.
 **Comments field**
 
 ```
-15 pages, 5 figures. Code and data pipeline: https://github.com/pitcany/seriea-leverage
+16 pages, 5 figures. Code and data pipeline: https://github.com/pitcany/seriea-leverage
 ```
 
 **Abstract** (plain text — arXiv's form does not accept LaTeX markup beyond

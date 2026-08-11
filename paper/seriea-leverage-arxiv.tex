@@ -506,6 +506,26 @@ result is not an artefact of the fitting procedure, and it does not depend on
 the validation/test split---even an analyst who improperly fitted the weight on
 the test data would obtain zero.
 
+The interval $[0,1]$ is the admissible range for a pool: outside it the
+combination is no longer a mixture of two opinions. A sceptical reader may
+nonetheless ask whether the unconstrained minimum lies below zero, which would
+say something stronger than that the model is uninformative---that it is
+anti-informative given the price. Extending the profile to $w \in [-1,1]$, the
+validation minimum is interior, at $\hat w = -0.225$, with the loss rising
+again for weights more negative than that. Freezing that weight and carrying it
+to the test period improves mean log loss by $0.00062$ ($95\%$ CI
+$[-0.00105, 0.00231]$) and mean RPS by $0.00021$ ($95\%$ CI
+$[-0.00029, 0.00071]$). Both intervals contain zero, so the tilt is not a
+reliable out-of-sample improvement.
+
+We read the sign rather than the magnitude. A negative weight divides the
+market forecast by the structural one, which sharpens it, and
+Section~\ref{sec:calibration} shows the structural model to be the flatter of
+the two. The unconstrained optimum is therefore acting as a temperature
+correction on the price, not as a channel through which the model contributes
+information.
+
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.66\textwidth]{fig_pool_profile.pdf}

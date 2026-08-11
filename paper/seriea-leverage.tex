@@ -283,6 +283,14 @@ small weight but a boundary solution: log loss increases monotonically as any
 weight is transferred onto the model, on the validation period and---were one to
 cheat and fit it there---on the test period also.
 
+Widening the scan to negative weights, which fall outside the admissible range
+for a pool, the validation minimum is interior at $\hat w = -0.225$; carried to
+the test period it improves log loss by $0.00062$ ($95\%$ CI
+$[-0.00105, 0.00231]$) and RPS by $0.00021$ ($95\%$ CI $[-0.00029, 0.00071]$),
+both intervals containing zero. A negative weight divides the market forecast
+by the flatter structural one and so sharpens it, which is a temperature
+correction on the price rather than a contribution of information.
+
 \begin{table}[t]
 \centering
 \caption{Pool weights fitted on the validation period.}
