@@ -1,9 +1,7 @@
 """Select the Dixon-Coles time-decay rate on a held-out validation period.
 
-The decay rate governs how fast past matches stop informing a club's rating. The
-2016 study fixed an equivalent quantity by assertion; here it is chosen by
-walk-forward validation on 2013-14 to 2018-19, with 2019-20 onward reserved
-untouched for the final test.
+Select daily decay using walk-forward validation on 2013/14-2018/19.
+The later historical evaluation period has already been inspected in revision.
 
 Run: ``python scripts/tune_decay.py``
 """
@@ -22,7 +20,7 @@ from seriea.evaluation.metrics import log_loss, ranked_probability_score
 from seriea.models.dixon_coles import DixonColesForecaster
 
 #: Candidate decay rates per day. Zero means no decay at all; 0.0065 is the rate
-#: reported by Dixon and Coles; the upper end corresponds to a half-life near
+#: retained from the original daily grid (not the published half-week units); the upper end is near
 #: five weeks.
 DECAY_GRID: tuple[float, ...] = (0.0, 0.002, 0.004, 0.0065, 0.009, 0.012, 0.018)
 

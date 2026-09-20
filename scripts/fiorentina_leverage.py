@@ -4,9 +4,8 @@ Takes a decision date inside 2025-26, fits the model on everything before it,
 simulates the remainder of the season, and ranks Fiorentina's remaining fixtures
 by how much each one moves the club's survival probability.
 
-Because that season is now complete, the output can be checked against what
-actually happened — which is the point. A leverage table is only worth acting on
-if the season probabilities behind it were honest at the time.
+The completed season permits a retrospective illustration, not validation
+from one realised outcome. See validate_seasons.py for the broader evaluation.
 
 Run: ``python scripts/fiorentina_leverage.py [--as-of 2026-03-01]``
 """
@@ -25,6 +24,7 @@ from seriea.data.teams import teams_in_season
 from seriea.models.dixon_coles import DixonColesForecaster
 from seriea.simulation.leverage import match_leverage, position_objective
 from seriea.simulation.season import current_standings, simulate_season
+from seriea.simulation.rules import playoff_score_grids
 
 SEASON = "2526"
 DEFAULT_AS_OF = "2026-03-01"
@@ -76,7 +76,9 @@ def main() -> None:
     standings = current_standings(played, teams)
     grids = forecaster.predict_score_grid(remaining)
     simulation = simulate_season(
-        standings, remaining, grids, n_simulations=arguments.simulations
+        standings, remaining, grids, n_simulations=arguments.simulations,
+        played=played, season_start=2025,
+        playoff_grids=playoff_score_grids(forecaster, teams),
     )
 
     # ---- where the club stood ------------------------------------------------
@@ -99,7 +101,7 @@ def main() -> None:
     for label, (best, worst) in (
         ("survival (1-17)", SURVIVAL_BAND),
         ("relegation (18-20)", RELEGATION_BAND),
-        ("Europe (1-6)", EUROPE_BAND),
+        ("top six (1-6)", EUROPE_BAND),
     ):
         probability = simulation.position_probability(FOCUS_TEAM, best, worst)
         print(f"  P({label:<19}) = {probability:6.1%}")
@@ -126,6 +128,14 @@ def main() -> None:
     output = Path(REPORTS_DIR)
     output.mkdir(parents=True, exist_ok=True)
     leverage.to_csv(output / "fiorentina_leverage.csv", index=False)
+    simplified = simulate_season(standings, remaining, grids, n_simulations=arguments.simulations)
+    (output / "fiorentina_projection.json").write_text(json.dumps({
+        "as_of": str(as_of.date()), "n_simulations": arguments.simulations,
+        "expected_points": simulation.expected_points(FOCUS_TEAM),
+        "survival": simulation.position_probability(FOCUS_TEAM, 1, 17),
+        "simplified_survival": simplified.position_probability(FOCUS_TEAM, 1, 17),
+        "diagnostics": simulation.diagnostics,
+    }, indent=2))
     print(f"Wrote {output / 'fiorentina_leverage.csv'}")
 
 

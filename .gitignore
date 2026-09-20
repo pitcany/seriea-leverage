@@ -28,3 +28,11 @@ paper/*.bbl
 paper/*.blg
 paper/*.synctex.gz
 paper/arxiv/
+
+# Local revision runtime and generated row-level forecasts
+.venv/
+reports/*forecasts.parquet
+paper/generated-results.log
+output/
+tmp/
+.DS_Store

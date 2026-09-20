@@ -1,15 +1,7 @@
-"""Rolling-origin backtesting.
+"""Strict rolling-origin forecasting with a fixed training-window cap.
 
-The 2016 study selected models with five-fold cross-validation on time-ordered
-data. That leaks: a fold containing March 2012 is used to predict January 2012,
-so the model is scored partly on information it could not have had. The fix is
-to walk forward — fit only on the past, predict the next window, advance, repeat
-— which is how the model would actually be used.
-
-Refitting before every single match would be exact but wasteful, so the origin
-advances in windows of a configurable length. Because the Dixon-Coles time decay
-already renders matches more than a couple of years old nearly weightless, the
-training history can also be capped without materially changing the fit.
+The 1,460-day cap is a modeling choice: at decay 0.002/day the oldest included
+match still has weight about 0.054. All training dates precede the origin.
 """
 
 from __future__ import annotations
@@ -25,9 +17,7 @@ from seriea.config import OUTCOMES
 #: Days between successive refits of the model.
 DEFAULT_REFIT_DAYS: int = 14
 
-#: Days of history retained when fitting. At the default decay rate a match
-#: three years old carries weight below 0.001, so this bound is immaterial to
-#: the fit while making the walk-forward tractable.
+#: Fixed training-history cap, applied consistently to model and baselines.
 DEFAULT_TRAINING_WINDOW_DAYS: int = 1_460
 
 
@@ -93,6 +83,18 @@ def rolling_origin_forecasts(
         for position, outcome in enumerate(OUTCOMES):
             block[f"p_{outcome}"] = probabilities[:, position]
         block["origin"] = origin
+        fitted_model = getattr(forecaster, "_shot_model", forecaster)
+        if hasattr(fitted_model, "converged"):
+            block["fit_converged"] = fitted_model.converged
+            block["fit_message"] = fitted_model.optimiser_message
+            block["fit_rho"] = fitted_model.rho
+            rates_h, rates_a = fitted_model.predict_rates(fixtures)
+            block["minimum_tau"] = np.minimum.reduce([
+                1 - rates_h * rates_a * fitted_model.rho,
+                1 + rates_h * fitted_model.rho,
+                1 + rates_a * fitted_model.rho,
+                np.full(len(fixtures), 1 - fitted_model.rho),
+            ])
         collected.append(block)
 
         origin = window_end

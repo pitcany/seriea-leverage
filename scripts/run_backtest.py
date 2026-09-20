@@ -4,7 +4,7 @@ Protocol, stated up front so nothing is chosen after seeing the test set:
 
 * **Validation**, 2013-14 to 2018-19 — used to pick the Dixon-Coles decay rate
   (in ``tune_decay.py``), the pooling weight, and the calibration temperature.
-* **Test**, 2019-20 to 2025-26 — touched once, for the numbers reported.
+* **Test**, 2019-20 to 2025-26 — a historical evaluation period already inspected during revision.
 
 Every model forecasts the same matches, so comparisons use a paired bootstrap.
 The market is the benchmark that matters: a structural model that cannot beat a
@@ -37,14 +37,14 @@ from seriea.evaluation.metrics import (
 )
 from seriea.models.blend import MarketModelPool
 from seriea.models.dixon_coles import DixonColesForecaster
-from seriea.models.market import market_probabilities
+from seriea.models.market import market_probabilities, market_forecasts
 from seriea.models.naive import BaseRateForecaster, UniformForecaster
 
 BACKTEST_START = pd.Timestamp("2013-08-01")
 TEST_START = pd.Timestamp("2019-08-01")
 
 #: Fallback if the tuning sweep has not been run.
-FALLBACK_DECAY: float = 0.0065
+FALLBACK_DECAY: float = 0.0065 / 3.5
 
 
 def load_decay_rate() -> float:
@@ -105,7 +105,7 @@ def main() -> None:
 
     # ---- baselines fitted the same walk-forward way --------------------------
     base_rate = rolling_origin_forecasts(
-        matches, BaseRateForecaster, BACKTEST_START, refit_days=365
+        matches, BaseRateForecaster, BACKTEST_START, refit_days=14
     )
     uniform = rolling_origin_forecasts(matches, UniformForecaster, BACKTEST_START, refit_days=365)
     keys = ["date", "home", "away"]
@@ -117,7 +117,7 @@ def main() -> None:
     del uniform
 
     candidates = {
-        "Uniform (2016 benchmark)": uniform_matrix,
+        "Uniform (argmax ties = H)": uniform_matrix,
         "Base rate": base_rate_matrix,
         "Dixon-Coles": model,
         "Dixon-Coles (calibrated)": calibrated_model,
@@ -191,6 +191,8 @@ def main() -> None:
         p_market_H=market[:, 0], p_market_D=market[:, 1], p_market_A=market[:, 2],
         p_pool_H=pooled[:, 0], p_pool_D=pooled[:, 1], p_pool_A=pooled[:, 2],
         is_test=is_test,
+        market_source=market_forecasts(forecasts)["market_source"],
+        market_timing=market_forecasts(forecasts)["market_timing"],
     ).to_parquet(output / "forecasts.parquet", index=False)
 
     (output / "backtest_settings.json").write_text(

@@ -1,32 +1,9 @@
-"""Forecasting from shot volume rather than goals.
+"""Independent-Poisson shots-on-target ratings converted to goal rates.
 
-Goals are a sparse, noisy realisation of how much a side actually threatened.
-A team that creates ten clear chances and converts one is, in expectation,
-stronger than the scoreline records — and a rating fitted on goals inherits all
-of that finishing noise. Expected goals is the standard fix; it is also
-proprietary, and no free, permitted source covers Serie A back to 2007.
-
-Shots on target are the pre-xG proxy for the same quantity, and
-football-data.co.uk carries them for every match in the corpus. The model here
-tests the underlying hypothesis without the licensed data:
-
-1. fit the Dixon-Coles machinery to **shots on target** instead of goals, giving
-   each club an attack and defence rating in shot-rate space;
-2. convert the predicted shot rates to goal rates with a single league-wide
-   conversion factor, estimated on the same training window and deliberately
-   *not* per-team — team-specific finishing is the noise being removed;
-3. build the scoreline distribution from those goal rates.
-
-The composition is deliberate: :class:`~seriea.models.dixon_coles.DixonColesForecaster`
-is reused unmodified by relabelling shots as goals, so both models share one
-fitting path and any comparison between them isolates the target variable.
-
-The low-score dependence correction is *not* applied here. Its parameter would
-have been fitted against shot counts, where the 0-0/1-1 inflation it corrects
-for does not arise; carrying it across to goal rates would import a
-meaningless adjustment. This model is therefore independent-Poisson on
-converted rates, which is a real difference from the goals model and is
-reported as such rather than papered over.
+The shot-count likelihood fixes rho to zero. Venue-specific league conversion
+factors use the same prior training window and time weights. The final goals
+grid is independent Poisson. This model differs from the goals model in both
+target and dependence structure; it is not a test that isolates target noise.
 """
 
 from __future__ import annotations
@@ -103,7 +80,8 @@ class ShotsForecaster:
             away_goals=usable["away_sot"].astype(int),
         )
         self._shot_model = DixonColesForecaster(
-            decay_rate=self.decay_rate, max_goals=self.max_goals
+            decay_rate=self.decay_rate, max_goals=self.max_goals,
+            independent_poisson=True,
         ).fit(relabelled, as_of)
         self._ratings = self._shot_model.ratings()
         self._home_advantage = self._shot_model.home_advantage
@@ -158,23 +136,9 @@ class ShotsForecaster:
         Raises:
             RuntimeError: If called before :meth:`fit`.
         """
-        if self._ratings is None:
+        if self._shot_model is None:
             raise RuntimeError("ShotsForecaster must be fitted before predicting.")
-
-        attack = self._ratings["attack"]
-        defence = self._ratings["defence"]
-
-        def rating(names: pd.Series, table: pd.Series) -> np.ndarray:
-            return names.map(table).fillna(0.0).to_numpy(dtype=float)
-
-        home_shots = np.exp(
-            self._home_advantage
-            + rating(fixtures["home"], attack)
-            - rating(fixtures["away"], defence)
-        )
-        away_shots = np.exp(
-            rating(fixtures["away"], attack) - rating(fixtures["home"], defence)
-        )
+        home_shots, away_shots = self._shot_model.predict_rates(fixtures)
         return home_shots * self._home_conversion, away_shots * self._away_conversion
 
     def predict_score_grid(self, fixtures: pd.DataFrame) -> np.ndarray:

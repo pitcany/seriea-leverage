@@ -11,11 +11,8 @@ betting market*, Applied Statistics 46(2), 1997, make this work in practice:
 * exponential time decay, so a match from three seasons ago informs the ratings
   less than one from last month.
 
-The decay rate is a tuned hyperparameter rather than a fixed constant. This is
-the specific failure of the 2016 study's ``e^{-i}`` weighting, which hard-coded
-a decay so aggressive that a nominal five-match form window carried an effective
-sample size of about two matches, and which normalised by the window length
-instead of by the sum of weights.
+The decay rate is selected on a chronological validation period. The original
+Dixon-Coles value uses half-week units; this implementation uses days.
 """
 
 from __future__ import annotations
@@ -41,18 +38,6 @@ class ConvergenceWarning(UserWarning):
 #: Largest goal tally represented in the score grid. Serie A sides essentially
 #: never exceed this, and the residual mass is renormalised away.
 _MAX_GOALS: int = 12
-
-#: Bounds on the low-score dependence parameter.
-#:
-#: The genuine admissibility condition is data-dependent — tau stays positive
-#: while ``rho >= -min(1/lambda, 1/mu)`` and ``rho <= min(1/(lambda*mu), 1)`` —
-#: which for Serie A scoring rates is roughly [-0.24, +0.21] and moves with the
-#: fitted rates. An earlier hard-coded box of [-0.15, 0.15] sat *inside* that
-#: region and truncated the maximum-likelihood estimate: fitted values reach
-#: -0.140 against the old lower bound, and on some windows the estimate pinned
-#: to it outright. The box is now wide enough not to bind, with infeasible
-#: values handled by the smooth penalty in the objective instead.
-_RHO_BOUNDS: tuple[float, float] = (-0.9, 0.9)
 
 #: Bounds on attack, defence and home-advantage parameters, in log-rate units.
 #: Note these constrain the n-1 *free* attack parameters; the nth is determined
@@ -117,12 +102,14 @@ class DixonColesForecaster:
     Args:
         decay_rate: Exponential decay per day. A match ``d`` days before the
             cut-off receives weight ``exp(-decay_rate * d)``. Zero disables
-            decay. The Dixon-Coles paper suggests roughly 0.0065 per day, a
-            half-life near 107 days.
+            decay. The original 0.0065 per half-week is 0.0065/3.5 per day,
+            a half-life near 373 days.
         max_goals: Largest goal tally in the prediction grid.
+        independent_poisson: Fix rho to zero for an independent count fit.
     """
 
-    def __init__(self, decay_rate: float = 0.0065, max_goals: int = _MAX_GOALS) -> None:
+    def __init__(self, decay_rate: float = 0.0065 / 3.5, max_goals: int = _MAX_GOALS,
+                 *, independent_poisson: bool = False) -> None:
         if decay_rate < 0:
             raise ValueError(f"decay_rate must be non-negative, got {decay_rate}.")
         if max_goals < 1:
@@ -130,6 +117,7 @@ class DixonColesForecaster:
 
         self.decay_rate = decay_rate
         self.max_goals = max_goals
+        self.independent_poisson = independent_poisson
         self._teams: tuple[str, ...] = ()
         self._index: dict[str, int] = {}
         self._attack: np.ndarray | None = None
@@ -176,13 +164,30 @@ class DixonColesForecaster:
         bounds = (
             [_RATING_BOUNDS] * (n_teams - 1)
             + [_RATING_BOUNDS] * n_teams
-            + [_RATING_BOUNDS, _RHO_BOUNDS]
+            + [_RATING_BOUNDS, (0.0, 0.0) if self.independent_poisson else (-0.999999, 0.999999)]
         )
 
+        def feasible_parameters(parameters: np.ndarray) -> np.ndarray:
+            # Optimise a fraction of the admissible interval, not unconstrained
+            # rho. These bounds cover every pairing of fitted ratings, including
+            # league-mean fallback ratings, even if that pairing was unobserved.
+            attack, defence, gamma, fraction = self._unpack(parameters, n_teams)
+            max_rate = np.exp(max(gamma, 0.0) + attack.max() - defence.min())
+            max_product = np.exp(gamma + 2 * (attack.max() - defence.min()))
+            bound = min(1.0, 1.0 / max_product) if fraction >= 0 else 1.0 / max_rate
+            unpacked = parameters.copy()
+            unpacked[-1] = fraction * bound
+            return unpacked
+
+        def objective(parameters: np.ndarray) -> float:
+            return self._negative_log_likelihood(
+                feasible_parameters(parameters), home_index, away_index,
+                home_goals, away_goals, weights, n_teams,
+            )
+
         result = minimize(
-            self._negative_log_likelihood,
+            objective,
             initial,
-            args=(home_index, away_index, home_goals, away_goals, weights, n_teams),
             method="L-BFGS-B",
             bounds=bounds,
             options={"maxiter": _MAX_ITERATIONS, "maxfun": _MAX_FUNCTION_EVALUATIONS},
@@ -198,7 +203,9 @@ class DixonColesForecaster:
                 stacklevel=2,
             )
 
-        attack, defence, self._home_advantage, self._rho = self._unpack(result.x, n_teams)
+        attack, defence, self._home_advantage, self._rho = self._unpack(
+            feasible_parameters(result.x), n_teams
+        )
         self._attack = attack
         self._defence = defence
 
@@ -290,7 +297,12 @@ class DixonColesForecaster:
         )
         negative_log_likelihood = -float(np.sum(weights * log_likelihood))
 
-        violation = np.clip(-correction, 0.0, None)
+        # Check the full low-score support, not only the observed scoreline.
+        support = np.column_stack([
+            1 - home_rate * away_rate * rho, 1 + home_rate * rho,
+            1 + away_rate * rho, np.full_like(home_rate, 1 - rho),
+        ])
+        violation = np.clip(_TAU_FLOOR - support, 0.0, None)
         if violation.any():
             negative_log_likelihood += _INFEASIBILITY_WEIGHT * float(np.sum(violation**2))
         return negative_log_likelihood
@@ -330,6 +342,10 @@ class DixonColesForecaster:
         home_rate = np.exp(self._home_advantage + home_attack - away_defence)
         away_rate = np.exp(away_attack - home_defence)
         return home_rate, away_rate
+
+    def predict_rates(self, fixtures: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+        """Return fitted rates with the shared unseen-club fallback."""
+        return self._rates(fixtures)
 
     def predict_proba(self, fixtures: pd.DataFrame) -> np.ndarray:
         """Forecast H-D-A probabilities by summing the score grid.
@@ -372,7 +388,9 @@ class DixonColesForecaster:
             (1, 1): np.full_like(home_rate, 1.0 - self._rho),
         }
         for (x, y), values in corrections.items():
-            joint[:, x, y] *= np.clip(values, _TAU_FLOOR, None)
+            if not np.isfinite(values).all() or (values <= 0).any():
+                raise ValueError("Invalid Dixon-Coles support for forecast fixture rates.")
+            joint[:, x, y] *= values
 
         return joint / joint.sum(axis=(1, 2), keepdims=True)
 

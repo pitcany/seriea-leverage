@@ -1,13 +1,7 @@
-"""Post-hoc recalibration of three-way forecasts.
+"""Validation-fitted temperature scaling for three-way forecasts.
 
-A model can rank matches well and still state the wrong numbers. Recalibration
-repairs the numbers without disturbing the ranking, and it is fitted strictly
-out of sample: fitting a calibrator on the same forecasts used to fit the model
-manufactures a calibration that will not survive deployment.
-
-Temperature scaling is the workhorse — a single parameter, so it cannot overfit
-a validation set of realistic size, and it is monotone, so discrimination is
-preserved exactly.
+It preserves the argmax within each match, but need not preserve rankings of
+a given class across matches. One parameter limits flexibility, not overfitting.
 """
 
 from __future__ import annotations

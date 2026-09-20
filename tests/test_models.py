@@ -49,7 +49,7 @@ def synthetic_matches(n_rounds: int = 60) -> pd.DataFrame:
                             "H" if home_goals > away_goals
                             else "A" if home_goals < away_goals else "D"
                         ),
-                        "b365_h": 2.0, "b365_d": 3.4, "b365_a": 3.8,
+                        "b365c_h": 2.0, "b365c_d": 3.4, "b365c_a": 3.8,
                         "ps_h": np.nan, "ps_d": np.nan, "ps_a": np.nan,
                         "psc_h": np.nan, "psc_d": np.nan, "psc_a": np.nan,
                     }
@@ -108,7 +108,7 @@ def test_market_probabilities_are_distributions() -> None:
 
 def test_market_probabilities_are_nan_without_a_book() -> None:
     matches = synthetic_matches(2)
-    matches.loc[:, ["b365_h", "b365_d", "b365_a"]] = np.nan
+    matches.loc[:, ["b365c_h", "b365c_d", "b365c_a"]] = np.nan
     assert np.isnan(market_probabilities(matches)).all()
     assert not has_market_price(matches).any()
 

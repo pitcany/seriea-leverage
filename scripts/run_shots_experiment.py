@@ -68,12 +68,22 @@ def main() -> None:
     matches = load_all()
     print(f"decay rate: {decay}\nbuilding walk-forward forecasts (this takes a few minutes)\n")
 
-    goals_forecasts = rolling_origin_forecasts(
-        matches, lambda: DixonColesForecaster(decay_rate=decay), BACKTEST_START
-    )
+    cached = Path(REPORTS_DIR) / "forecasts.parquet"
+    if cached.exists():
+        settings = json.loads((Path(REPORTS_DIR) / "backtest_settings.json").read_text())
+        if settings["decay_rate"] != decay:
+            raise ValueError("Cached goals forecasts use a different decay; rerun run_backtest.py.")
+        goals_forecasts = pd.read_parquet(cached)
+        if "fit_rho" not in goals_forecasts:
+            raise ValueError("Cached forecasts predate the scientific revision; rerun run_backtest.py.")
+    else:
+        goals_forecasts = rolling_origin_forecasts(
+            matches, lambda: DixonColesForecaster(decay_rate=decay), BACKTEST_START
+        )
     shots_forecasts = rolling_origin_forecasts(
         matches, lambda: ShotsForecaster(decay_rate=decay), BACKTEST_START
     )
+    shots_forecasts.to_parquet(Path(REPORTS_DIR) / "shots_forecasts.parquet", index=False)
 
     keys = ["date", "home", "away"]
     merged = goals_forecasts.merge(

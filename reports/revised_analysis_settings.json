@@ -1,0 +1,28 @@
+{
+  "market_only_coefficients": [
+    -0.06487244851267555,
+    0.03906792403633379,
+    1.1445433675852832
+  ],
+  "augmented_coefficients": [
+    -0.059389842284323556,
+    0.012820458987243162,
+    1.331152335256334,
+    -0.15469230347499213,
+    -0.0804816769695937
+  ],
+  "coefficient_order": [
+    "intercept_H",
+    "intercept_D",
+    "market",
+    "goals",
+    "shots"
+  ],
+  "goals_shots_weights": [
+    0.6,
+    0.4
+  ],
+  "test_status": "historical, inspected before revision",
+  "n_validation": 2280,
+  "n_test": 2660
+}

@@ -1,16 +1,8 @@
-"""Monte Carlo simulation of a Serie A season.
+"""Independent-fixture season simulation with selectable Serie A rules.
 
-Match-level probabilities are only useful to a club once they are aggregated
-into the quantities that actually drive decisions: the chance of reaching
-Europe, the chance of going down, the chance of the title. That aggregation is
-what turns a forecast into a plan.
-
-Scorelines rather than outcomes are sampled, using the full Dixon-Coles score
-grid, so goal difference emerges naturally and can break ties. Serie A's first
-tiebreaker is head-to-head record; this simulator applies the simpler
-points-then-goal-difference-then-goals-scored order, which agrees with the
-official ordering in the large majority of cases and is standard practice for
-season simulation.
+Pass season_start, played fixtures and playoff distributions for the official
+head-to-head/playoff path. Omitting season_start explicitly retains the legacy
+points/overall-goal-difference approximation for sensitivity comparisons.
 """
 
 from __future__ import annotations
@@ -47,6 +39,7 @@ class SeasonSimulation:
     positions: np.ndarray
     home_goals: np.ndarray
     away_goals: np.ndarray
+    diagnostics: dict | None = None
 
     def position_probability(self, team: str, best: int, worst: int) -> float:
         """Probability a club finishes within a position band.
@@ -139,8 +132,16 @@ def sample_scorelines(
         Tuple of home and away goal arrays, each of shape
         ``(n_simulations, n_fixtures)``.
     """
+    score_grids = np.asarray(score_grids, dtype=float)
+    if score_grids.ndim != 3 or score_grids.shape[1] != score_grids.shape[2]:
+        raise ValueError("Score grids must be square three-dimensional arrays.")
+    if n_simulations < 1:
+        raise ValueError("At least one simulation is required.")
+    if (not np.isfinite(score_grids).all() or (score_grids < 0).any()
+            or not np.allclose(score_grids.sum(axis=(1, 2)), 1.0)):
+        raise ValueError("Score grids must be finite nonnegative probability distributions.")
     n_fixtures, grid_size = score_grids.shape[0], score_grids.shape[1]
-    flattened = score_grids.reshape(n_fixtures, -1)
+    flattened = score_grids.reshape(n_fixtures, grid_size * grid_size)
     cumulative = np.cumsum(flattened, axis=1)
     # Guard against floating-point drift leaving the final bin below 1.
     cumulative[:, -1] = 1.0
@@ -162,6 +163,10 @@ def simulate_season(
     *,
     n_simulations: int = DEFAULT_SIMULATIONS,
     seed: int = DEFAULT_SEED,
+    played: pd.DataFrame | None = None,
+    season_start: int | None = None,
+    playoff_grids: np.ndarray | None = None,
+    neutral_playoff_grids: np.ndarray | None = None,
 ) -> SeasonSimulation:
     """Play out the remaining fixtures many times and record final tables.
 
@@ -172,6 +177,10 @@ def simulate_season(
         score_grids: Joint score distributions for those fixtures.
         n_simulations: Number of seasons to simulate.
         seed: Random seed.
+        played: Completed league fixtures, needed for mini-tables.
+        season_start: Start year for official ranking, or None for simplified ranking.
+        playoff_grids: Home-venue grids indexed by both team indices.
+        neutral_playoff_grids: Neutral-venue grids required for 2022/23.
 
     Returns:
         The completed simulation.
@@ -215,8 +224,35 @@ def simulate_season(
         goals_for[:, a] += away_goals[:, fixture]
         goals_against[:, a] += home_goals[:, fixture]
 
-    positions = _rank_tables(points, goals_for - goals_against, goals_for)
-    return SeasonSimulation(teams, points, positions, home_goals, away_goals)
+    diagnostics = {"rules": "simplified"}
+    if season_start is None:
+        positions = _rank_tables(points, goals_for - goals_against, goals_for)
+    else:
+        if played is None:
+            raise ValueError("Completed fixtures are required for head-to-head ranking.")
+        from seriea.simulation.rules import rank_head_to_head, resolve_playoffs
+        hp = np.zeros((n_simulations, len(teams), len(teams)), dtype=np.int16)
+        hg = np.zeros_like(hp)
+        for match in played.itertuples():
+            h, a = position_of[match.home], position_of[match.away]
+            difference = int(match.home_goals) - int(match.away_goals)
+            hp[:,h,a] += 3 if difference > 0 else int(difference == 0)
+            hp[:,a,h] += 3 if difference < 0 else int(difference == 0)
+            hg[:,h,a] += difference
+            hg[:,a,h] -= difference
+        for fixture, (h, a) in enumerate(zip(home_index, away_index)):
+            hp[:,h,a] += 3*home_win[:,fixture] + draw[:,fixture]
+            hp[:,a,h] += 3*away_win[:,fixture] + draw[:,fixture]
+            difference = home_goals[:,fixture] - away_goals[:,fixture]
+            hg[:,h,a] += difference
+            hg[:,a,h] -= difference
+        order = rank_head_to_head(points, goals_for-goals_against, goals_for, hp, hg, rng)
+        order, diagnostics = resolve_playoffs(order, points, season_start, playoff_grids,
+                                              neutral_playoff_grids, rng)
+        diagnostics["rules"] = str(season_start)
+        positions = np.empty_like(order)
+        np.put_along_axis(positions, order, np.broadcast_to(np.arange(1,len(teams)+1),order.shape), axis=1)
+    return SeasonSimulation(teams, points, positions, home_goals, away_goals, diagnostics)
 
 
 def _rank_tables(
@@ -225,8 +261,8 @@ def _rank_tables(
     """Convert simulated totals into finishing positions.
 
     Ties are broken on goal difference then goals scored; any residual tie is
-    resolved arbitrarily but deterministically, which affects a negligible
-    fraction of simulations.
+    resolved alphabetically by stable input order. This is a simplified
+    comparator and is not the official Serie A ranking.
 
     Args:
         points: Final points, shape ``(n_simulations, n_teams)``.

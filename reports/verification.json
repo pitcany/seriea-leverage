@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "corpus_matches": 7220,
+  "test_matches": 2660,
+  "season_forecasts": 840,
+  "fiorentina_fixtures": 12,
+  "abstract_words": 352,
+  "fits": {
+    "forecasts": {
+      "origins": 262,
+      "all_converged": true,
+      "minimum_forecast_tau": 0.37047620532068126
+    },
+    "shots_forecasts": {
+      "origins": 262,
+      "all_converged": true,
+      "minimum_forecast_tau": 1.0
+    }
+  },
+  "fixture_stakes_checks": "all 12 components, shared-draw covariance, Fieller endpoints, scenario effects and simulation variances independently recomputed; input hash verified",
+  "survival_subgroup_checks": "420 exhaustive membership rows, 840 joined forecasts, all subgroup scores and paired differences checked; source forecast hash verified",
+  "score_checks": "all revised score-table entries recomputed from saved test probabilities"
+}

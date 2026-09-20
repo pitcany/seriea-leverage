@@ -1,15 +1,7 @@
-"""Uncertainty quantification for forecast comparisons.
+"""Paired uncertainty conditional on fitted forecasts.
 
-The 2016 study ranked five classifiers spanning 47.2% to 53.0% accuracy on 218
-test matches and declared a winner. The standard error on an accuracy near one
-half at that sample size is about 3.4 percentage points, so the entire spread
-was under two standard errors and the ranking carried no information.
-
-Every comparison here therefore comes with an interval. Because competing models
-forecast the *same* matches, their scores are strongly correlated, and the
-paired bootstrap below exploits that: it resamples matches, not models, and so
-gives a far tighter — and correct — interval on the difference than treating the
-two score sets as independent would.
+Match bootstrap assumes exchangeability. Cluster bootstrap resamples complete
+groups and supports season-level sensitivity; few seasons limit precision.
 """
 
 from __future__ import annotations
@@ -160,3 +152,27 @@ def _check_inputs(values: np.ndarray, confidence: float) -> None:
         raise ValueError("Score array contains non-finite values.")
     if not 0.0 < confidence < 1.0:
         raise ValueError(f"confidence must lie in (0, 1), got {confidence}.")
+
+
+def cluster_bootstrap_mean(values, groups, *, resamples=10000, seed=DEFAULT_SEED,
+                           confidence=.95):
+    """Resample whole groups, retaining all within-group score dependence.
+
+    The estimate and replicates weight observations equally, not groups equally.
+    It remains conditional on the trained forecasting procedure; it does not
+    resample model fitting. With seven seasons its coverage is only approximate.
+    """
+    values=np.asarray(values,dtype=float)
+    groups=np.asarray(groups)
+    _check_inputs(values,confidence)
+    if groups.shape!=values.shape:
+        raise ValueError("Scores and cluster labels must align.")
+    labels, inverse=np.unique(groups,return_inverse=True)
+    if len(labels)<2:
+        raise ValueError("At least two clusters are required.")
+    sums=np.bincount(inverse,weights=values)
+    counts=np.bincount(inverse)
+    indices=np.random.default_rng(seed).integers(len(labels),size=(resamples,len(labels)))
+    replicates=sums[indices].sum(axis=1)/counts[indices].sum(axis=1)
+    low,high=np.quantile(replicates,[(1-confidence)/2,(1+confidence)/2])
+    return Interval(float(values.mean()),float(low),float(high),confidence)

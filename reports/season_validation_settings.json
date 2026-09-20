@@ -1,0 +1,349 @@
+{
+  "seed": 20260920,
+  "simulations": 10000,
+  "decay_rate": 0.002,
+  "horizons": [
+    "01-01",
+    "03-01",
+    "05-01"
+  ],
+  "status": "retrospective exploratory revision; not a new holdout",
+  "diagnostics": [
+    {
+      "season": "1920",
+      "as_of": "2020-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2019"
+    },
+    {
+      "season": "1920",
+      "as_of": "2020-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2019"
+    },
+    {
+      "season": "1920",
+      "as_of": "2020-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2019"
+    },
+    {
+      "season": "1920",
+      "as_of": "2020-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2019"
+    },
+    {
+      "season": "1920",
+      "as_of": "2020-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2019"
+    },
+    {
+      "season": "1920",
+      "as_of": "2020-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2019"
+    },
+    {
+      "season": "2021",
+      "as_of": "2021-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2020"
+    },
+    {
+      "season": "2021",
+      "as_of": "2021-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2020"
+    },
+    {
+      "season": "2021",
+      "as_of": "2021-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2020"
+    },
+    {
+      "season": "2021",
+      "as_of": "2021-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2020"
+    },
+    {
+      "season": "2021",
+      "as_of": "2021-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2020"
+    },
+    {
+      "season": "2021",
+      "as_of": "2021-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2020"
+    },
+    {
+      "season": "2122",
+      "as_of": "2022-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2021"
+    },
+    {
+      "season": "2122",
+      "as_of": "2022-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2021"
+    },
+    {
+      "season": "2122",
+      "as_of": "2022-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2021"
+    },
+    {
+      "season": "2122",
+      "as_of": "2022-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2021"
+    },
+    {
+      "season": "2122",
+      "as_of": "2022-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2021"
+    },
+    {
+      "season": "2122",
+      "as_of": "2022-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 0,
+      "rules": "2021"
+    },
+    {
+      "season": "2223",
+      "as_of": "2023-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 394,
+      "survival_playoffs": 1449,
+      "rules": "2022"
+    },
+    {
+      "season": "2223",
+      "as_of": "2023-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 684,
+      "survival_playoffs": 1735,
+      "rules": "2022"
+    },
+    {
+      "season": "2223",
+      "as_of": "2023-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 9,
+      "survival_playoffs": 1143,
+      "rules": "2022"
+    },
+    {
+      "season": "2223",
+      "as_of": "2023-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 57,
+      "survival_playoffs": 1245,
+      "rules": "2022"
+    },
+    {
+      "season": "2223",
+      "as_of": "2023-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 1206,
+      "rules": "2022"
+    },
+    {
+      "season": "2223",
+      "as_of": "2023-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 1327,
+      "rules": "2022"
+    },
+    {
+      "season": "2324",
+      "as_of": "2024-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 343,
+      "survival_playoffs": 1594,
+      "rules": "2023"
+    },
+    {
+      "season": "2324",
+      "as_of": "2024-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 691,
+      "survival_playoffs": 2067,
+      "rules": "2023"
+    },
+    {
+      "season": "2324",
+      "as_of": "2024-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 2,
+      "survival_playoffs": 2001,
+      "rules": "2023"
+    },
+    {
+      "season": "2324",
+      "as_of": "2024-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 124,
+      "survival_playoffs": 1904,
+      "rules": "2023"
+    },
+    {
+      "season": "2324",
+      "as_of": "2024-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 2319,
+      "rules": "2023"
+    },
+    {
+      "season": "2324",
+      "as_of": "2024-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 0,
+      "survival_playoffs": 2245,
+      "rules": "2023"
+    },
+    {
+      "season": "2425",
+      "as_of": "2025-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 430,
+      "survival_playoffs": 1857,
+      "rules": "2024"
+    },
+    {
+      "season": "2425",
+      "as_of": "2025-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 878,
+      "survival_playoffs": 2135,
+      "rules": "2024"
+    },
+    {
+      "season": "2425",
+      "as_of": "2025-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 716,
+      "survival_playoffs": 1777,
+      "rules": "2024"
+    },
+    {
+      "season": "2425",
+      "as_of": "2025-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 947,
+      "survival_playoffs": 1863,
+      "rules": "2024"
+    },
+    {
+      "season": "2425",
+      "as_of": "2025-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 804,
+      "survival_playoffs": 1721,
+      "rules": "2024"
+    },
+    {
+      "season": "2425",
+      "as_of": "2025-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 858,
+      "survival_playoffs": 1619,
+      "rules": "2024"
+    },
+    {
+      "season": "2526",
+      "as_of": "2026-01-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 538,
+      "survival_playoffs": 1674,
+      "rules": "2025"
+    },
+    {
+      "season": "2526",
+      "as_of": "2026-01-01",
+      "model": "League Poisson",
+      "title_playoffs": 912,
+      "survival_playoffs": 1990,
+      "rules": "2025"
+    },
+    {
+      "season": "2526",
+      "as_of": "2026-03-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 36,
+      "survival_playoffs": 1107,
+      "rules": "2025"
+    },
+    {
+      "season": "2526",
+      "as_of": "2026-03-01",
+      "model": "League Poisson",
+      "title_playoffs": 192,
+      "survival_playoffs": 1636,
+      "rules": "2025"
+    },
+    {
+      "season": "2526",
+      "as_of": "2026-05-01",
+      "model": "Dixon-Coles",
+      "title_playoffs": 0,
+      "survival_playoffs": 1126,
+      "rules": "2025"
+    },
+    {
+      "season": "2526",
+      "as_of": "2026-05-01",
+      "model": "League Poisson",
+      "title_playoffs": 22,
+      "survival_playoffs": 1078,
+      "rules": "2025"
+    }
+  ]
+}

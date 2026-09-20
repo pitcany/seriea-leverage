@@ -32,8 +32,8 @@ _CORE_COLUMNS: dict[str, str] = {
 }
 
 #: Source column -> canonical column, for price fields that may be absent.
-#: ``b365_*`` are Bet365 opening prices (all seasons); ``ps_*`` are Pinnacle
-#: opening and ``psc_*`` Pinnacle closing prices (2012-13 onward).
+#: ``b365_*`` are Bet365 pre-closing snapshots (all seasons); ``ps_*`` are Pinnacle
+#: pre-closing and ``psc_*`` Pinnacle closing prices (2012-13 onward).
 _ODDS_COLUMNS: dict[str, str] = {
     "B365H": "b365_h",
     "B365D": "b365_d",
@@ -44,6 +44,12 @@ _ODDS_COLUMNS: dict[str, str] = {
     "PSCH": "psc_h",
     "PSCD": "psc_d",
     "PSCA": "psc_a",
+    "B365CH": "b365c_h",
+    "B365CD": "b365c_d",
+    "B365CA": "b365c_a",
+    "AvgCH": "avgc_h",
+    "AvgCD": "avgc_d",
+    "AvgCA": "avgc_a",
 }
 
 _COUNT_COLUMNS: tuple[str, ...] = (
@@ -138,6 +144,8 @@ def _validate_season(frame: pd.DataFrame, season: str) -> None:
             disagrees with the goals, or a team meets itself.
     """
     unknown = set(frame["outcome"]) - set(OUTCOMES)
+    if frame.duplicated(["home", "away"]).any():
+        raise ValueError(f"Season {season} has duplicate home/away fixtures.")
     if unknown:
         raise ValueError(f"Season {season} has unrecognised outcome codes: {sorted(unknown)}")
 

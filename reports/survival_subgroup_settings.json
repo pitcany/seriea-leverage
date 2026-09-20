@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "forecast_file": "reports/season_validation_forecasts.csv",
+  "forecast_sha256": "37249d865b100e2aded8fbbc4d201face74ec3a9e5affdea6b183071f7df9430",
+  "raw_match_sha256": {
+    "data/raw/I1_1920.csv": "f33233e0c428ebe4f7cb854c4a504e0b59c4e009ee8b679269486e26afdc575b",
+    "data/raw/I1_2021.csv": "c09196fa18877547442807d375317299947abdd6d51a5e0df044cc6026e13f36",
+    "data/raw/I1_2122.csv": "6a9555d5a90e652a883fd2862a52545c06e264016cd770347c067a6d7c993170",
+    "data/raw/I1_2223.csv": "9960837f37a97ae700f876c87b85a8b7a2f5a5d05a53077830c21b9db8880c45",
+    "data/raw/I1_2324.csv": "343a89db026fe4204ebeabd663cdfee8d02a45457828fc1cb63fa630ca170723",
+    "data/raw/I1_2425.csv": "79d87a5b18771e066ac7419b7876bfd9771a68ca117a9712375d6bc9685abee3",
+    "data/raw/I1_2526.csv": "709ae279617d16af226312bcceac941e71241745ddaf950bdac2b83afad4fcbb"
+  },
+  "status": "Retrospective exploratory subgroup audit chosen after inspecting historical outcomes; not a new holdout.",
+  "seasons": [
+    "1920",
+    "2021",
+    "2122",
+    "2223",
+    "2324",
+    "2425",
+    "2526"
+  ],
+  "horizons": [
+    "01-01",
+    "03-01",
+    "05-01"
+  ],
+  "selection": "Exactly eight lowest clubs at each origin, using only same-season matches with date strictly before origin and known deductions inherited from validate_seasons.py.",
+  "ordering": "Ascending current points, goal difference, goals for, then team name; eligibility_rank=1 is lowest. This is an eligibility convention, not official final-table tiebreaking.",
+  "sanctions": "Juventus 2022/23 deductions: 15 points from 2023-01-21 to before 2023-04-21; 10 from 2023-05-23 to before 2023-07-01. Date-only inputs make changes effective at next midnight, matching the existing validation.",
+  "roster": "Club identities are obtained from the exact saved forecast keys; predicted probabilities and realised future results do not select membership.",
+  "counts": {
+    "all_club_membership_rows": 420,
+    "bottom8_per_horizon_model": 56,
+    "other12_per_horizon_model": 84
+  },
+  "comparisons": "Dixon-Coles minus League Poisson, paired on season/horizon/as_of/team; negative Brier or points-error differences favor Dixon-Coles.",
+  "bootstrap": {
+    "function": "seriea.evaluation.inference.cluster_bootstrap_mean",
+    "resamples": 10000,
+    "seed": 20260810,
+    "confidence": 0.95,
+    "clusters": "Whole seasons",
+    "n_clusters": 7
+  },
+  "limitations": [
+    "Seven seasons limit interval coverage and calibration assessment.",
+    "Membership uses current points, not matches played or an estimated relegation-risk threshold.",
+    "The split and analyses are exploratory; intervals have no multiplicity adjustment.",
+    "No model refitting, new simulations, intervention effects or prospective validation are added.",
+    "Original all-club scores remain unchanged; subgroup estimates must be interpreted alongside both groups.",
+    "Intervals condition on fitted forecasts and do not propagate model-estimation or specification uncertainty."
+  ]
+}

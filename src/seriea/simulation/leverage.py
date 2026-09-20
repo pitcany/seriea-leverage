@@ -7,14 +7,14 @@ in the probability of achieving the objective between winning and losing:
 
 .. math:: L_m = P(\\text{objective} \\mid \\text{win } m) - P(\\text{objective} \\mid \\text{lose } m)
 
-This is the quantity a sporting director actually needs. It tells you which
-fixtures justify spending a tiring key player and which are the ones to rotate
-through — a decision no 1X2 probability answers on its own.
-
-Because the simulator samples every fixture independently, conditioning on a
-fixture's simulated result after the fact is equivalent to forcing that result
-and resampling the rest, so a single simulation run supports every fixture's
-leverage at once.
+This is match importance, an established descriptive quantity (e.g. Link and
+de Lorenzo, 2016). It is not the causal effect of player rotation. If an
+intervention changes only outcome probabilities and preserves conditional
+scorelines and the other fixtures, its effect is the change in probability of
+each result multiplied by its conditional objective probability, summed over
+win/draw/loss. General rotation decisions require additional player and fatigue
+models. Conditional extraction equals forced-result resimulation only under
+the fixed independent-fixture model and the specified conditional intervention.
 """
 
 from __future__ import annotations
@@ -113,6 +113,7 @@ def match_leverage(
                 "p_objective_if_loss": probability_lost,
                 "leverage": probability_won - probability_lost,
                 "leverage_std_error": _difference_standard_error(achieved, won, lost),
+                "n_win": int(won.sum()), "n_draw": int(drew.sum()), "n_loss": int(lost.sum()),
             }
         )
 
@@ -122,6 +123,7 @@ def match_leverage(
                 "date", "opponent", "venue", "p_objective_if_win",
                 "p_objective_if_draw", "p_objective_if_loss", "leverage",
                 "leverage_std_error",
+                "n_win", "n_draw", "n_loss",
             ]
         )
 

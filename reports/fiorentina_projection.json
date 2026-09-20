@@ -1,0 +1,12 @@
+{
+  "as_of": "2026-03-01",
+  "n_simulations": 20000,
+  "expected_points": 41.39545,
+  "survival": 0.96,
+  "simplified_survival": 0.96405,
+  "diagnostics": {
+    "title_playoffs": 92,
+    "survival_playoffs": 2247,
+    "rules": "2025"
+  }
+}

@@ -1,23 +1,8 @@
-"""Combining a structural model with the market price.
+"""Validation-fitted logarithmic opinion pools.
 
-This is where the 2016 study's central question should have been posed. That
-study fed bookmaker odds in as features and then compared its accuracy against
-the market's, concluding its predictions were "comparable". The right question
-is narrower and answerable: *given* the market's forecast, does the structural
-model carry any information the market has not already priced?
-
-A logarithmic opinion pool answers it directly. Combining
-
-.. math:: p \\propto p_{\\text{market}}^{1-w} \\, p_{\\text{model}}^{w}
-
-and fitting the single weight ``w`` out of sample gives a clean read. If the
-fitted weight is indistinguishable from zero, the model adds nothing to the
-market and any apparent edge was an artefact. A weight materially above zero is
-evidence of genuine incremental information.
-
-The logarithmic pool is preferred to a linear one because it is externally
-Bayesian and keeps the combination in the exponential family: pooling log-odds
-is the natural operation on probabilistic forecasts.
+Weights describe performance within this specified family; neither zero nor
+positive weight is a general test of incremental information. Calibration
+changes can produce gains even without a match-specific additional signal.
 """
 
 from __future__ import annotations
@@ -176,8 +161,8 @@ def fit_pool_weights(
 class MarketModelPool:
     """Fits the weight a structural model deserves alongside the market.
 
-    Attributes are populated by :meth:`fit`; the fitted weight is the headline
-    quantity, since it measures incremental information rather than raw skill.
+    Attributes are populated by :meth:`fit`; the fitted weight describes
+    the optimum in this constrained pooling family.
     """
 
     def __init__(self) -> None:
@@ -216,7 +201,8 @@ class MarketModelPool:
         result = minimize_scalar(
             negative_log_likelihood, bounds=_WEIGHT_BOUNDS, method="bounded"
         )
-        self._weight = float(result.x)
+        candidates = [0.0, float(result.x), 1.0]
+        self._weight = min(candidates, key=negative_log_likelihood)
         return self
 
     def transform(self, market: np.ndarray, model: np.ndarray) -> np.ndarray:
