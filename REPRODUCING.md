@@ -3,7 +3,7 @@
 ## Version and manuscript
 Prepared 2026-11-02 from c5d771d12898d51f10a8fb7936c9d80a84cc8ae9.
 Use the full manuscript paper/seriea-leverage-arxiv.pdf, its .tex, and
-paper/seriea-leverage-arxiv.tar.gz (source plus all four referenced vector figures).
+paper/seriea-leverage-arxiv.tar.gz (source plus all five referenced vector figures).
 References are embedded in thebibliography; no separate .bib is required.
 
 ## Install and reproduce
