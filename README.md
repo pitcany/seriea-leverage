@@ -152,6 +152,10 @@ Two arithmetic notes on the original, recovered from its own confusion matrices
 
 ## Reproducing
 
+For the complete workflow, environment prerequisites, and archive limitations,
+see [REPRODUCING.md](REPRODUCING.md). After installation, the single entry point is
+`python scripts/reproduce.py`.
+
 ```bash
 conda create -n seriea python=3.12 -y && conda activate seriea
 pip install -e ".[dev]"
@@ -165,8 +169,8 @@ python scripts/run_shots_experiment.py # shot-based signal vs goals vs market
 python scripts/build_artifact.py      # self-contained HTML report
 python scripts/paper_supplements.py    # season splits, pool profile, vector figures
 python scripts/build_arxiv_bundle.py   # self-contained arXiv tarball
-cd paper && latexmk -pdf seriea-leverage.tex           # short paper
-cd paper && latexmk -pdf seriea-leverage-arxiv.tex     # full paper
+(cd paper && latexmk -pdf seriea-leverage.tex)           # short paper
+(cd paper && latexmk -pdf seriea-leverage-arxiv.tex)     # full paper
 
 pytest                                 # 126 tests
 ```
