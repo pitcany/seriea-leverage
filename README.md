@@ -28,7 +28,7 @@ Walk-forward, 2019-20 to 2025-26 (2,660 matches). Lower RPS is better.
 | Model | RPS | 95% CI | log loss | accuracy |
 |---|---|---|---|---|
 | Market (Shin de-vigged) | **0.1905** | [0.1856, 0.1957] | 0.9620 | 54.8% |
-| Market + Dixon-Coles pool | 0.1905 | [0.1856, 0.1957] | 0.9620 | 54.9% |
+| Market + Dixon-Coles pool | 0.1905 | [0.1856, 0.1957] | 0.9620 | 54.8% |
 | Dixon-Coles (calibrated) | 0.1972 | [0.1921, 0.2024] | 0.9858 | 53.4% |
 | Base rate | 0.2318 | [0.2292, 0.2344] | 1.0846 | 40.6% |
 | Uniform (the 2016 benchmark) | 0.2340 | [0.2312, 0.2367] | 1.0986 | 40.6% |
@@ -152,6 +152,10 @@ Two arithmetic notes on the original, recovered from its own confusion matrices
 
 ## Reproducing
 
+For the complete workflow, environment prerequisites, and archive limitations,
+see [REPRODUCING.md](REPRODUCING.md). After installation, the single entry point is
+`python scripts/reproduce.py`.
+
 ```bash
 conda create -n seriea python=3.12 -y && conda activate seriea
 pip install -e ".[dev]"
@@ -165,8 +169,8 @@ python scripts/run_shots_experiment.py # shot-based signal vs goals vs market
 python scripts/build_artifact.py      # self-contained HTML report
 python scripts/paper_supplements.py    # season splits, pool profile, vector figures
 python scripts/build_arxiv_bundle.py   # self-contained arXiv tarball
-cd paper && latexmk -pdf seriea-leverage.tex           # short paper
-cd paper && latexmk -pdf seriea-leverage-arxiv.tex     # full paper
+(cd paper && latexmk -pdf seriea-leverage.tex)           # short paper
+(cd paper && latexmk -pdf seriea-leverage-arxiv.tex)     # full paper
 
 pytest                                 # 126 tests
 ```
